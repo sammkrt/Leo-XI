@@ -10,6 +10,7 @@ on:
     paths:
       - '.github/workflows/update-club-data.yml'
       - 'scripts/update-club-data.mjs'
+      - 'scripts/fetch-ea-json.py'
       - 'lib/club-feed.mjs'
 permissions:
   contents: write
@@ -27,8 +28,12 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Fetch, validate and publish the last 10 EA league matches
         run: node scripts/update-club-data.mjs --matches-only
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          EA_DIAGNOSTICS: ${{ github.event_name == 'push' && '1' || '0' }}

@@ -1,17 +1,32 @@
 import {writeFile} from 'node:fs/promises';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {fileURLToPath} from 'node:url';
 import {CLUB_ID} from '../lib/club-model.mjs';
 import {validateFeed,validateMatchFeed} from '../lib/club-feed.mjs';
 const base='https://proclubs.ea.com/api/fc/';
+const execute=promisify(execFile);
+async function python(path,minimal=false){
+ try{
+  const {stdout}=await execute(process.env.EA_PYTHON||'python3',[fileURLToPath(new URL('./fetch-ea-json.py',import.meta.url)),path,...(minimal?['--minimal']:[])],{timeout:25000,maxBuffer:4*1024*1024});
+  return JSON.parse(stdout);
+ }catch(error){throw Error(error.stderr?.trim()||'EA Python request failed or timed out');}
+}
 async function get(path){
- const endpoint=path.split('?')[0];
- const response=await fetch(base+path,{signal:AbortSignal.timeout(20000),headers:{Accept:'application/json'}});
- if(!response.ok)throw Error(`EA ${endpoint}: HTTP ${response.status}`);
- return response.json();
+ return python(path);
 }
 // A failed or invalid response aborts the run before any published data changes.
 const matchesOnly=process.argv.includes('--matches-only');
+const matchPath='clubs/matches?platform=common-gen5&clubIds='+CLUB_ID+'&matchType=leagueMatch&maxResultCount=10';
+if(process.env.EA_DIAGNOSTICS==='1'){
+ // A bounded comparison in the same runner, not an automatic retry loop.
+ for(const [label,request] of [
+  ['Node / minimal headers',async()=>{const r=await fetch(base+matchPath,{signal:AbortSignal.timeout(20000),headers:{Accept:'application/json'}});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}],
+  ['Python / minimal headers',()=>python(matchPath,true)]
+ ]){try{const value=await request();validateMatchFeed({clubId:CLUB_ID,matchType:'leagueMatch',matches:value,fetchedAt:new Date().toISOString()});console.log('Diagnostic '+label+': validated JSON, '+value.length+' matches');}catch(error){console.log('Diagnostic '+label+': '+error.message);}}
+}
 async function collect(){
- if(matchesOnly){const matches=await get('clubs/matches?platform=common-gen5&clubIds='+CLUB_ID+'&matchType=leagueMatch&maxResultCount=10');return validateMatchFeed({clubId:CLUB_ID,matchType:'leagueMatch',matches,fetchedAt:new Date().toISOString()});}
+ if(matchesOnly){const matches=await get(matchPath);console.log('Python / compatibility headers: received JSON');return validateMatchFeed({clubId:CLUB_ID,matchType:'leagueMatch',matches,fetchedAt:new Date().toISOString()});}
  const [clubs,overall,members,matches]=await Promise.all([
  get('allTimeLeaderboard/search?platform=common-gen5&clubName=LEO%20XI'),
  get('clubs/overallStats?platform=common-gen5&clubIds='+CLUB_ID),
