@@ -27,8 +27,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-      - name: Fetch, validate and publish EA data
-        run: node scripts/update-club-data.mjs
+      - name: Fetch, validate and publish the last 10 EA league matches
+        run: node scripts/update-club-data.mjs --matches-only
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

@@ -104,3 +104,10 @@ Ham olaylar arşivde tutulur; matchId + playerId satırları karşılaştırmada
 `Update EA club data` işi her gün Amsterdam saatiyle 04:17'de çalışacak şekilde yapılandırılır (cron `17 4 * * *`, timezone `Europe/Amsterdam`). GitHub zamanlanmış işleri gecikebilir. Cloudflare beş dakikada bir son yayımlanmış doğrulanmış dosyayı arşive aktarır; bu kontrol veri alma zamanını yenilemez. Son başarılı EA kayıt zamanı arayüzde açıkça gösterilir. 36 saatten eski kayıt için günlük güncelleme gecikmesi bildirilir. Başarısız EA istekleri veri dosyasını değiştirmez ve eski maçları silmez.
 
 EA erişimi bir geliştirme oturumunda başarılı olmuş, GitHub hosted Ubuntu/macOS ve Cloudflare üzerinde 403 ile başarısız olmuştur. Ev Linux sunucusu için de kullanıcı 403 paylaşmıştır. Günlük zamanlama bu erişim engelini çözmez. Otomatik toplama için çalışan ve kullanılmasına izin verilen bir veri kaynağı gereklidir. Günlük son 10 maç kapsamı tüm sezonun eksiksiz arşivi anlamına gelmez.
+
+
+## Bağımsız maç toplama
+
+Günlük iş `node scripts/update-club-data.mjs --matches-only` çalıştırır. Yalnız `/clubs/matches` adresinden son 10 lig maçını alır ve doğrulanan yanıtı `club-data/matches.json` dosyasına yazar. `overallStats`, oyuncu ve liderlik tablosu uç noktalarının hataları bu işi artık engellemez. Tam istatistik toplama ayrı olarak betiğin varsayılan modu ile yapılabilir; günlük maç işi takım/kadro toplamlarını yenilemez.
+
+Cloudflare önce maç dosyasını okur. İlk maç dosyası henüz yoksa (yalnız 404 durumunda) eski `latest.json` kaydını kullanır; diğer hatalarda mevcut arşivi korur. Maç yanıtının kulüp ID, maç türü, zaman ve tekilleştirme kontrolleri yapılır. Yeni maç dosyası toplam istatistiklerin `fetchedAt` zamanını değiştirmez. Arşiv `lastMatchUpdate` bilgisini ayrı gösterir. Yeni veri yoksa kontrol saati son başarılı veri alma saati olarak sunulmaz. Tarayıcıdan başarılı erişim, GitHub runner erişiminin de başarılı olduğunu kanıtlamaz.

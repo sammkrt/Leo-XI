@@ -1,6 +1,6 @@
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
-import {validateFeed} from './club-feed.mjs';
+import {validateFeed,validateMatchFeed} from './club-feed.mjs';
 type ClubData = {club:any;overall:any;members:any[];matches:any[];fetchedAt:string;mode:string;source:string;notice?:string;syncFailure?:{code:string;endpoint?:string;at:string}};
 class SyncFailure extends Error {
  code:string;endpoint?:string;
@@ -33,17 +33,20 @@ export class ClubStore {
  }
  async syncInternal():Promise<ClubData>{
   try{
-   let response:Response;
-   try{response=await fetch('https://raw.githubusercontent.com/sammkrt/Leo-XI/club-data/latest.json',{signal:AbortSignal.timeout(14000),headers:{Accept:'application/json','Cache-Control':'no-cache'}})}catch(error){throw new SyncFailure(error instanceof Error&&['TimeoutError','AbortError'].includes(error.name)?'FEED_TIMEOUT':'FEED_NETWORK')}
+   let response:Response;let legacy=false;
+   const read=(filename:string)=>fetch('https://raw.githubusercontent.com/sammkrt/Leo-XI/club-data/'+filename,{signal:AbortSignal.timeout(14000),headers:{Accept:'application/json','Cache-Control':'no-cache'}});
+   try{response=await read('matches.json');if(response.status===404){legacy=true;response=await read('latest.json')}}catch(error){throw new SyncFailure(error instanceof Error&&['TimeoutError','AbortError'].includes(error.name)?'FEED_TIMEOUT':'FEED_NETWORK')}
    if(!response.ok)throw new SyncFailure('FEED_HTTP_'+response.status);
-   let data:ClubData;try{data=validateFeed(await response.json())}catch{throw new SyncFailure('FEED_INVALID_DATA')}
+   let data:any;try{data=legacy?validateFeed(await response.json()):validateMatchFeed(await response.json())}catch{throw new SyncFailure('FEED_INVALID_DATA')}
    const clean=data.matches;
    const current=await this.latestData();
-   if(Date.parse(data.fetchedAt)<Date.parse(current.fetchedAt))throw new SyncFailure('FEED_OLDER_DATA');
+   const matchTime=await this.state.storage.get<string>('lastMatchUpdate')||current.fetchedAt;
+   if(Date.parse(data.fetchedAt)<Date.parse(matchTime))throw new SyncFailure('FEED_OLDER_DATA');
    await this.state.storage.transaction(async(tx)=>{
-    await tx.put('latest',{...data,matches:[]});await tx.put('recentMatchIds',clean.map((m:any)=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
+    if(legacy)await tx.put('latest',{...data,matches:[]});
+    await tx.put('lastMatchUpdate',data.fetchedAt);await tx.put('recentMatchIds',clean.map((m:any)=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
-   });return data;
+   });return legacy?data:{...(await this.latestData()),mode:'scheduled'};
   }catch(error){
    const failure={code:error instanceof SyncFailure?error.code:'STORAGE_WRITE_FAILED',endpoint:error instanceof SyncFailure?error.endpoint:undefined,at:new Date().toISOString()};
    console.error('LEO XI sync failed',JSON.stringify(failure));
@@ -60,12 +63,14 @@ export class ClubStore {
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
    const latest=await this.latestData();
    const error=await this.state.storage.get<string>('syncError');const stale=Date.now()-Date.parse(latest.fetchedAt)>36*60*60*1000;
-   return json(error?{...latest,mode:'snapshot',notice:error,syncFailure:await this.state.storage.get('syncFailure')}:stale?{...latest,notice:'Günlük veri kaydı 36 saati aştı. Yeni veri alınamamış olabilir; son doğrulanmış kayıt gösteriliyor.'}:latest);
+   return json(error?{...latest,mode:'snapshot',notice:error,syncFailure:await this.state.storage.get('syncFailure')}:stale?{...latest,notice:'Takım ve kadro toplamlarının kaydı 36 saati aştı. Maç arşivi ayrı güncellenir; son doğrulanmış toplamlar gösteriliyor.'}:latest);
   }
   if(url.pathname==='/api/archive'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
    const records=await this.state.storage.list<any>({prefix:'match:'});
-   return json({matches:uniqueMatches([...records.values()]),startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),notice:await this.state.storage.get('syncError')||null,persistent:true});
+   const lastMatchUpdate=await this.state.storage.get<string>('lastMatchUpdate')||(await this.latestData()).fetchedAt;
+   const error=await this.state.storage.get('syncError');const stale=Date.now()-Date.parse(lastMatchUpdate)>36*60*60*1000;
+   return json({matches:uniqueMatches([...records.values()]),startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
   }
   if(url.pathname==='/api/attendance'){
    const day=url.searchParams.get('date')||amsterdamDay();if(!validDay(day))return json({error:'Geçerli bir tarih seç.'},400);
