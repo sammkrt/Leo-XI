@@ -5,6 +5,11 @@ on:
     - cron: '17 4 * * *'
       timezone: Europe/Amsterdam
   workflow_dispatch:
+    inputs:
+      diagnostics:
+        description: Compare Node and Python HTTP clients once
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -36,4 +41,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          EA_DIAGNOSTICS: ${{ github.event_name == 'push' && '1' || '0' }}
+          EA_DIAGNOSTICS: ${{ github.event_name == 'workflow_dispatch' && inputs.diagnostics && '1' || '0' }}
