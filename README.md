@@ -101,7 +101,7 @@ Ham olaylar arşivde tutulur; matchId + playerId satırları karşılaştırmada
 
 ## Günlük veri toplama
 
-`Update EA club data` işi her gün Amsterdam saatiyle 04:17'de çalışacak şekilde yapılandırılır (cron `17 4 * * *`, timezone `Europe/Amsterdam`). GitHub zamanlanmış işleri gecikebilir. Cloudflare beş dakikada bir son yayımlanmış doğrulanmış dosyayı arşive aktarır; bu kontrol veri alma zamanını yenilemez. Son başarılı EA kayıt zamanı arayüzde açıkça gösterilir. 36 saatten eski kayıt için günlük güncelleme gecikmesi bildirilir. Başarısız EA istekleri veri dosyasını değiştirmez ve eski maçları silmez.
+`Update EA club data` işi maç gecesinden sonra Amsterdam saatiyle 03:17, 04:17, 05:17 ve 06:17'de çalışır (`timezone: Europe/Amsterdam`). Böylece geçici bir EA erişim hatasından sonra aynı gece üç ek toplama fırsatı bulunur. GitHub zamanlanmış işleri gecikebilir. Cloudflare beş dakikada bir son yayımlanmış doğrulanmış dosyayı arşive aktarır; bu kontrol veri alma zamanını yenilemez. Son başarılı EA kayıt zamanı arayüzde açıkça gösterilir. 36 saatten eski kayıt için günlük güncelleme gecikmesi bildirilir. Başarısız EA istekleri veri dosyasını değiştirmez ve eski maçları silmez.
 
 7 Ekim 2026 tarihinde aynı GitHub macOS runner üzerinde Node fetch sade başlıklarla HTTP 403, Python urllib sade başlıklarla zaman aşımı, Python urllib uyumluluk başlıklarıyla başarılı JSON döndürmüştür. Son yöntem 14:59:52 UTC tarihinde 79638 kulübünün 10 lig maçını doğrulayıp yayımlamıştır (Actions run 37641253269). Günlük zamanlama artık bu çalışan Python istemcisini kullanır. Bu gözlem gelecekte EA erişiminin değişmeyeceğini garanti etmez. Günlük son 10 maç kapsamı tüm sezonun eksiksiz arşivi anlamına gelmez.
 
