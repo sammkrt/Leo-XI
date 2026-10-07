@@ -1,8 +1,14 @@
 name: Update EA club data
 on:
   schedule:
-    # Daily after match night, following Amsterdam daylight saving time.
+    # Four chances after match night, following Amsterdam daylight saving time.
+    - cron: '17 3 * * *'
+      timezone: Europe/Amsterdam
     - cron: '17 4 * * *'
+      timezone: Europe/Amsterdam
+    - cron: '17 5 * * *'
+      timezone: Europe/Amsterdam
+    - cron: '17 6 * * *'
       timezone: Europe/Amsterdam
   workflow_dispatch:
     inputs:
