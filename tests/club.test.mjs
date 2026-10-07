@@ -59,3 +59,5 @@ test('stored LEO XI match comparison agrees with named goal and assist totals',(
  const sample=comparisonSample(snapshot.matches,snapshot.members[0].name,snapshot.members[1].name,{common:true});assert.ok(sample.commonCount>0);
  for(const rows of [sample.left,sample.right]){const valid=rows.filter(r=>playerEvents(r));const contribution=deepMetric(rows,definition('contributions'));assert.equal(contribution.total,valid.reduce((n,r)=>n+Number(r.goals)+Number(r.assists),0));assert.equal(contribution.covered,valid.length);}
 });
+
+test('daily collection allows a 24-hour-old feed and flags a missed daily update after 36 hours',async()=>{const s=state(),store=new ClubStore(s);await store.ready;const latest=await s.storage.get('latest');await s.storage.put('latest',{...latest,fetchedAt:new Date(Date.now()-24*60*60*1000).toISOString()});assert.equal((await json(store,'/api/club')).data.notice,undefined);await s.storage.put('latest',{...latest,fetchedAt:new Date(Date.now()-37*60*60*1000).toISOString()});assert.match((await json(store,'/api/club')).data.notice,/36 saati/);assert.equal((await json(store,'/api/archive')).data.matches.length,10);});

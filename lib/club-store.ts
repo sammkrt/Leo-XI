@@ -59,8 +59,8 @@ export class ClubStore {
   if(url.pathname==='/api/club'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
    const latest=await this.latestData();
-   const error=await this.state.storage.get<string>('syncError');const stale=Date.now()-Date.parse(latest.fetchedAt)>2*60*60*1000;
-   return json(error?{...latest,mode:'snapshot',notice:error,syncFailure:await this.state.storage.get('syncFailure')}:stale?{...latest,notice:'Otomatik güncelleme gecikti. Son doğrulanmış kayıt gösteriliyor.'}:latest);
+   const error=await this.state.storage.get<string>('syncError');const stale=Date.now()-Date.parse(latest.fetchedAt)>36*60*60*1000;
+   return json(error?{...latest,mode:'snapshot',notice:error,syncFailure:await this.state.storage.get('syncFailure')}:stale?{...latest,notice:'Günlük veri kaydı 36 saati aştı. Yeni veri alınamamış olabilir; son doğrulanmış kayıt gösteriliyor.'}:latest);
   }
   if(url.pathname==='/api/archive'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);

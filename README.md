@@ -6,7 +6,7 @@ LEO XI FC27 Pro Clubs takımının gerçek EA verileriyle çalışan siyah–alt
 
 - Sade, mobil uyumlu tasarım; LEO XI logosu ve hafif geçişler.
 - Kulüp toplamları, son maç formu ve atılan/yenilen gol grafiği.
-- Kalıcı maç arşivi: son lig maçları 30 dakikada bir alınır, maç ID'siyle tekilleştirilir ve Cloudflare SQLite-backed Durable Object deposunda tutulur.
+- Kalıcı maç arşivi: son 10 lig maçı için her gün 04:17 Europe/Amsterdam saatinde veri alma denemesi yapılır; EA erişimi şu anda 403 nedeniyle başarısızdır, maç ID'siyle tekilleştirilir ve Cloudflare SQLite-backed Durable Object deposunda tutulur.
 - Maç detayları: her iki takımın oyuncu puanları, gol/asistleri, başarılı/denenen pasları ve müdahaleleri.
 - Haftanın oyuncusu: son 7 günde en az 3 kayıtlı maç; en yüksek ortalama EA puanı. Eşitlikte maçın oyuncusu sayısı, sonra maç sayısı.
 - Oyuncu karşılaştırması: maç başına gol, asist ve müdahale; EA ortalama puanı ve pas yüzdesi.
@@ -61,7 +61,7 @@ Yayın sonrası `/api/archive` yanıtında `persistent: true` görülmelidir. Cl
 
 Kulüp ID **79638**, platform **common-gen5**. Kaynak: EA Clubs.
 
-Arşiv, 7 Ekim 2026 tarihinde alınmış 10 gerçek lig maçıyla başlatılır; bundan sonra görülen maçlar eklenir. EA'nın artık döndürmediği eski maçlar geri getirilemez. 30 dakikalık kontroller arasında EA'nın sınırlı son-maç penceresinden düşen kayıtlar veya uzun EA kesintileri nedeniyle kapsam eksik kalabilir. Haftalık ödül ve grafikler yalnız kayıtlı maçlara göre hesaplanır. Takım ve kadro toplamları EA'nın ayrı toplam istatistikleridir.
+Arşiv, 7 Ekim 2026 tarihinde alınmış 10 gerçek lig maçıyla başlatılır; bundan sonra görülen maçlar eklenir. EA'nın artık döndürmediği eski maçlar geri getirilemez. Günlük kontroller arasında EA'nın sınırlı son-maç penceresinden düşen kayıtlar veya uzun EA kesintileri nedeniyle kapsam eksik kalabilir. Haftalık ödül ve grafikler yalnız kayıtlı maçlara göre hesaplanır. Takım ve kadro toplamları EA'nın ayrı toplam istatistikleridir.
 
 EA erişilemiyorsa son doğrulanmış kayıt ve kayıt tarihi gösterilir. Katılım panosu takım üyelerinin beyanıyla çalışır; kullanıcı hesabı doğrulaması yoktur. Kesin diziliş ve sağ/sol konum bilgisi bulunmadığından saha görünümü yoktur.
 
@@ -97,3 +97,10 @@ Karşılaştır sayfasındaki Kayıtlı maçlar görünümü, kulüp oyuncu topl
 Yedi kategori 108 olay göstergesi içerir: hücum, pas, savunma, bölgesel top kaybı/kazanma, dripling, disiplin ve pozisyon/karar geri bildirimi. Yüzdeler toplam pay/payda üzerinden hesaplanır, her göstergenin kendi geçerli maç kapsamı gösterilir. Olay eşleştirmeleri topluluk araştırmasıdır. Tutarsız farklar sıfırlanmaz; ilgili kayıtlardan çıkarılır. Medyan ve popülasyon standart sapması isteğe bağlıdır; sıfır denemeli maçlar yüzde dağılımından çıkarılır. Son 5 ve önceki 5 gol+asist ortalamaları ile son 10 hareketli ortalaması seçili örneklemdeki kişisel maçlara dayanır.
 
 Ham olaylar arşivde tutulur; matchId + playerId satırları karşılaştırmada tekilleştirilir. Eksik olay yanıtları gözlenen sıfırdan ayrılır. Güvenilir dakika doğrulaması olmadığından per-90, geçerli denemeler bulunmadığından dripling/hava topu başarı yüzdesi, partial E96 kodundan kırmızı kart, xG ya da özel karar kalitesi puanı üretilmez. Bu özellik yeni veri erişimi sağlamaz ve EA 403 sorununu çözmez.
+
+
+## Günlük veri toplama
+
+`Update EA club data` işi her gün Amsterdam saatiyle 04:17'de çalışacak şekilde yapılandırılır (cron `17 4 * * *`, timezone `Europe/Amsterdam`). GitHub zamanlanmış işleri gecikebilir. Cloudflare beş dakikada bir son yayımlanmış doğrulanmış dosyayı arşive aktarır; bu kontrol veri alma zamanını yenilemez. Son başarılı EA kayıt zamanı arayüzde açıkça gösterilir. 36 saatten eski kayıt için günlük güncelleme gecikmesi bildirilir. Başarısız EA istekleri veri dosyasını değiştirmez ve eski maçları silmez.
+
+EA erişimi bir geliştirme oturumunda başarılı olmuş, GitHub hosted Ubuntu/macOS ve Cloudflare üzerinde 403 ile başarısız olmuştur. Ev Linux sunucusu için de kullanıcı 403 paylaşmıştır. Günlük zamanlama bu erişim engelini çözmez. Otomatik toplama için çalışan ve kullanılmasına izin verilen bir veri kaynağı gereklidir. Günlük son 10 maç kapsamı tüm sezonun eksiksiz arşivi anlamına gelmez.

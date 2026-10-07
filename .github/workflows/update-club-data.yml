@@ -1,7 +1,9 @@
 name: Update EA club data
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    # Daily after match night, following Amsterdam daylight saving time.
+    - cron: '17 4 * * *'
+      timezone: Europe/Amsterdam
   workflow_dispatch:
   push:
     branches: [main]
