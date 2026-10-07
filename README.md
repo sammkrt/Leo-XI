@@ -80,3 +80,11 @@ Bağımsız takım sitesidir; EA SPORTS ile bağlantılı değildir.
 Cloudflare her 5 dakikada bu dosyayı okuyup mevcut kalıcı arşive işler. Kullanıcı istekleri EA'ya veya GitHub'a veri çekme isteği başlatmaz. Yenile düğmesi kaldırılmıştır; açık sayfa 5 dakikada bir yalnız sitenin kayıtlı verisini okur. Her veri yenilemesi için uygulama build'i gerekmez.
 
 GitHub zamanlanmış işleri gecikebilir; kesin dakika garantisi yoktur. Public depolarda 60 gün repo etkinliği yoksa GitHub zamanlanmış işleri devre dışı bırakabilir; Actions sayfasından tekrar etkinleştirilir. Actions sekmesinde `Update EA club data` işi ve çalışma sonucu izlenebilir; gerekirse `Run workflow` ile yönetici tarafından başlatılır. EA hatası veya geçersiz yanıt halinde mevcut dosya değiştirilmez; Cloudflare okuma hatasında da kayıtlar korunur.
+
+## Gelişmiş olay analizi
+
+Analiz sekmesinde tüm kayıtlar / son 7 gün / son 30 gün ve oyuncu filtresi bulunur. Maç detayında seçili takımın toplamı veya tek oyuncusu analiz edilir. Pas yönü ve uzunluğu için başarılı/hatalı olay sayıları; şut, isabetli şut, dripling, pas arası, ikinci asist, pozisyon uyarıları ve üç bölgedeki top kazanma/kaybetme sayıları gösterilir.
+
+Eşleştirme kaynağı: https://github.com/Interactive-63/eafc-pro-clubs-api-research . Yalnız araştırmada confirmed/high confidence olarak sınıflanan kodlar kullanılır; bunlar resmî EA tanımları değildir. Gol, asist ve şut kodları varsa adlandırılmış alanlarla karşılaştırılır. Eksik/bozuk veya doğrulaması uyuşmayan satırlar dışlanır ve oyuncu-maç kapsamı gösterilir. Ofsayt pasları ve alt kategori kapsamı nedeniyle pas toplamları standart tablodan farklı olabilir; kalan negatifse sıfır uydurmak yerine hesaplanamadı gösterilir. Şut olayları bloklanan şutları içerebilir. Pozisyon uyarıları süre veya kesin saha konumu değildir.
+
+Başlangıçtaki LEO XI kaydında 10 maç, 91 oyuncu-maç satırı ve kullanılabilir 90 olay kaydı vardır. Bu 90 satırın gol, asist ve şut eşleştirmeleri mevcut EA alanlarıyla doğrulanmıştır. Analiz yeni veriye erişim sağlayan bir servis değildir; mevcut veya sonradan arşive eklenen kayıtları yorumlar. EA 403 erişim sorunu bu özellikten bağımsızdır.
