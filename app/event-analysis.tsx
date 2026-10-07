@@ -1,10 +1,10 @@
 'use client';
 import {useMemo,useState} from 'react';
 import {eventSummary} from '../lib/club-events.mjs';
-type Match={matchId:string;players?:Record<string,Record<string,any>>};
+import type {Match} from '../lib/club-types';
 export default function EventAnalysis({matches,teamId='79638'}:{matches:Match[];teamId?:string}){
  const [selection,setSelection]=useState('all');
- const players=useMemo(()=>{const byId=new Map<string,string>();for(const m of matches)for(const [id,p]of Object.entries(m.players?.[teamId]||{}))byId.set(id,p.playername||id);return [...byId].sort((a,b)=>a[1].localeCompare(b[1]))},[matches,teamId]);
+ const players=useMemo(()=>{const byId=new Map<string,string>();for(const m of matches)for(const [id,p]of Object.entries(m.players?.[teamId]||{}))byId.set(id,p!.playername||id);return [...byId].sort((a,b)=>a[1].localeCompare(b[1]))},[matches,teamId]);
  const playerId=players.some(([id])=>id===selection)?selection:'all';
  const stats=useMemo(()=>eventSummary(matches,teamId,playerId),[matches,teamId,playerId]);
  const goals=[['Toplam şut',stats.shots],['İsabetli şut',stats.onTarget],['Başarılı dripling',stats.dribbles],['Pas arası',stats.interceptions],['İkinci asist',stats.secondAssists],['Pozisyon uyarısı',stats.outOfPosition]] as const;
