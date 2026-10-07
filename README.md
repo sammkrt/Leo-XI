@@ -90,6 +90,12 @@ Eşleştirme kaynağı: https://github.com/Interactive-63/eafc-pro-clubs-api-res
 Başlangıçtaki LEO XI kaydında 10 maç, 91 oyuncu-maç satırı ve kullanılabilir 90 olay kaydı vardır. Bu 90 satırın gol, asist ve şut eşleştirmeleri mevcut EA alanlarıyla doğrulanmıştır. Analiz yeni veriye erişim sağlayan bir servis değildir; mevcut veya sonradan arşive eklenen kayıtları yorumlar. EA 403 erişim sorunu bu özellikten bağımsızdır.
 
 
+## Ham veri dışa aktarımı
+
+Analiz sekmesindeki **Raw Data Export** alanından tüm mevcut kayıtlar, bir maç günü (oturum), tek maç, ISO takvim haftası veya takvim ayı JSON olarak indirilebilir. Oturumlar Europe/Amsterdam saatine göre bir takvim günüdür; haftalar pazartesi başlar, aylar da aynı saat dilimini kullanır. Seçenekler en yeniden eskiye sıralanır ve indirmeden önce maç sayısı gösterilir. Boş seçimlerde indirme kapalıdır.
+
+Dosyalar dışa aktarma zamanı, saat dilimi, kapsam, seçim ve maç sayısını içeren bir zarfın `matches` alanında tam ham kayıtları taşır. Mevcut iki takım, oyuncu alanları, ham olay sayaçları ve bilinmeyen alanlar korunur; eksik değerler sıfıra çevrilmez. Kalıcı arşiv yüklenince doğrudan arşiv kayıtları kullanılır; bağlantı beklenirken uygulamanın mevcut kayıtları kullanılabilir. Bu dışa aktarım yeni EA verisi toplamaz ve eksiksiz sezon arşivi anlamına gelmez. Dışa aktarma kapsamı ekrandaki son 7/30 gün analiz filtresinden bağımsızdır.
+
 ## Kayıtlı maç karşılaştırması
 
 Karşılaştır sayfasındaki Kayıtlı maçlar görünümü, kulüp oyuncu toplamlarından ayrı bir örneklem kullanır. Tüm kayıtlar veya son 5/10 uygun maç; yalnız ortak maçlar; kayıttaki pozisyon ve ayrı maç türü filtreleri vardır. Eski kayıtlar leagueMatch uç noktasından alınmıştır.
