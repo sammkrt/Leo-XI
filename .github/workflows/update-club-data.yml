@@ -1,0 +1,32 @@
+name: Update EA club data
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-club-data.yml'
+      - 'scripts/update-club-data.mjs'
+      - 'lib/club-feed.mjs'
+permissions:
+  contents: write
+concurrency:
+  group: leo-xi-ea-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch, validate and publish EA data
+        run: node scripts/update-club-data.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

@@ -46,7 +46,7 @@ Cloudflare Workers & Pages bölümünde GitHub reposu `sammkrt/Leo-XI`, üretim 
 | Build variable: NODE_VERSION | `22.16.0` |
 | Build variable: PNPM_VERSION | `11.25.0` |
 
-İlk yayında `CLUB_STORE` deposu, `ClubStore` sınıfı için SQLite migration ile otomatik oluşturulur. Ayrıca `*/30 * * * *` Cron Trigger tanımlanır. Ayrı bir D1 veritabanı veya manuel database ID gerekmez. Cloudflare hesabının bu işlemler için yetkisi bulunmalıdır. Preview builds şimdilik kapalı tutulabilir.
+İlk yayında `CLUB_STORE` deposu, `ClubStore` sınıfı için SQLite migration ile otomatik oluşturulur. Ayrıca `*/5 * * * *` Cron Trigger tanımlanır; EA yerine yayımlanmış veri dosyasını kalıcı depoya aktarır. Ayrı bir D1 veritabanı veya manuel database ID gerekmez. Cloudflare hesabının bu işlemler için yetkisi bulunmalıdır. Preview builds şimdilik kapalı tutulabilir.
 
 Yerelden doğrudan yayınlamak için:
 
@@ -72,3 +72,11 @@ React 19, TypeScript, Vinext/Vite ve Cloudflare Workers. `lib/club-store.ts` kal
 GitHub Pages sunucu API'sini ve kalıcı depoyu çalıştıramaz. Cloudflare yayını için ChatGPT oturumu veya linki gerekmez. `.openai/hosting.json` ilk kaynak projesinin kimliğini içerir; erişim anahtarı değildir.
 
 Bağımsız takım sitesidir; EA SPORTS ile bağlantılı değildir.
+
+## Otomatik veri güncelleme
+
+`Update EA club data` GitHub Actions işi UTC saatine göre her saatin 07 ve 37. dakikalarında EA verilerini alır, kulüp ve yanıt yapısını doğrular ve yalnız `club-data` dalındaki `latest.json` dosyasını günceller. Node.js 22 üzerinde çalışır; harici token veya Cloudflare secret gerekmez. İş yalnız bu depoda geçici `GITHUB_TOKEN` ile `contents: write` izni kullanır. Veri dalı ilk kurulumda oluşturulmuştur; uygulama üretim dalı `main` olarak kalır.
+
+Cloudflare her 5 dakikada bu dosyayı okuyup mevcut kalıcı arşive işler. Kullanıcı istekleri EA'ya veya GitHub'a veri çekme isteği başlatmaz. Yenile düğmesi kaldırılmıştır; açık sayfa 5 dakikada bir yalnız sitenin kayıtlı verisini okur. Her veri yenilemesi için uygulama build'i gerekmez.
+
+GitHub zamanlanmış işleri gecikebilir; kesin dakika garantisi yoktur. Public depolarda 60 gün repo etkinliği yoksa GitHub zamanlanmış işleri devre dışı bırakabilir; Actions sayfasından tekrar etkinleştirilir. Actions sekmesinde `Update EA club data` işi ve çalışma sonucu izlenebilir; gerekirse `Run workflow` ile yönetici tarafından başlatılır. EA hatası veya geçersiz yanıt halinde mevcut dosya değiştirilmez; Cloudflare okuma hatasında da kayıtlar korunur.
