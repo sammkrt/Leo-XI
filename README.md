@@ -88,3 +88,12 @@ Analiz sekmesinde tüm kayıtlar / son 7 gün / son 30 gün ve oyuncu filtresi b
 Eşleştirme kaynağı: https://github.com/Interactive-63/eafc-pro-clubs-api-research . Yalnız araştırmada confirmed/high confidence olarak sınıflanan kodlar kullanılır; bunlar resmî EA tanımları değildir. Gol, asist ve şut kodları varsa adlandırılmış alanlarla karşılaştırılır. Eksik/bozuk veya doğrulaması uyuşmayan satırlar dışlanır ve oyuncu-maç kapsamı gösterilir. Ofsayt pasları ve alt kategori kapsamı nedeniyle pas toplamları standart tablodan farklı olabilir; kalan negatifse sıfır uydurmak yerine hesaplanamadı gösterilir. Şut olayları bloklanan şutları içerebilir. Pozisyon uyarıları süre veya kesin saha konumu değildir.
 
 Başlangıçtaki LEO XI kaydında 10 maç, 91 oyuncu-maç satırı ve kullanılabilir 90 olay kaydı vardır. Bu 90 satırın gol, asist ve şut eşleştirmeleri mevcut EA alanlarıyla doğrulanmıştır. Analiz yeni veriye erişim sağlayan bir servis değildir; mevcut veya sonradan arşive eklenen kayıtları yorumlar. EA 403 erişim sorunu bu özellikten bağımsızdır.
+
+
+## Kayıtlı maç karşılaştırması
+
+Karşılaştır sayfasındaki Kayıtlı maçlar görünümü, kulüp oyuncu toplamlarından ayrı bir örneklem kullanır. Tüm kayıtlar veya son 5/10 uygun maç; yalnız ortak maçlar; kayıttaki pozisyon ve ayrı maç türü filtreleri vardır. Eski kayıtlar leagueMatch uç noktasından alınmıştır.
+
+Yedi kategori 108 olay göstergesi içerir: hücum, pas, savunma, bölgesel top kaybı/kazanma, dripling, disiplin ve pozisyon/karar geri bildirimi. Yüzdeler toplam pay/payda üzerinden hesaplanır, her göstergenin kendi geçerli maç kapsamı gösterilir. Olay eşleştirmeleri topluluk araştırmasıdır. Tutarsız farklar sıfırlanmaz; ilgili kayıtlardan çıkarılır. Medyan ve popülasyon standart sapması isteğe bağlıdır; sıfır denemeli maçlar yüzde dağılımından çıkarılır. Son 5 ve önceki 5 gol+asist ortalamaları ile son 10 hareketli ortalaması seçili örneklemdeki kişisel maçlara dayanır.
+
+Ham olaylar arşivde tutulur; matchId + playerId satırları karşılaştırmada tekilleştirilir. Eksik olay yanıtları gözlenen sıfırdan ayrılır. Güvenilir dakika doğrulaması olmadığından per-90, geçerli denemeler bulunmadığından dripling/hava topu başarı yüzdesi, partial E96 kodundan kırmızı kart, xG ya da özel karar kalitesi puanı üretilmez. Bu özellik yeni veri erişimi sağlamaz ve EA 403 sorununu çözmez.

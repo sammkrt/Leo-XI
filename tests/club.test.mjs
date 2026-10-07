@@ -31,3 +31,31 @@ test('research goal, assist and shot mappings reconcile with the stored LEO XI r
 
 import {comparisonValue,betterSide,numericField} from '../lib/club-comparison.mjs';
 test('comparison preserves missing values and only divides counters with valid appearances',()=>{for(const value of [undefined,null,'',false,'bad','Infinity',-1])assert.equal(numericField(value),null);assert.equal(numericField('0'),0);const p={gamesPlayed:'20',goals:'10',assists:'5',winRate:'60'};assert.equal(comparisonValue(p,'contributions','count','perGame'),.75);assert.equal(comparisonValue(p,'goals','count','total'),10);assert.equal(comparisonValue(p,'winRate','percent','perGame'),60);assert.equal(comparisonValue({...p,gamesPlayed:'0'},'goals','count','perGame'),null);assert.equal(comparisonValue({...p,assists:undefined},'contributions','count'),null);assert.equal(betterSide(0,2,'count','lower'),'left');assert.equal(betterSide(null,2,'count'),null);assert.equal(betterSide(180,175,'height'),null)});
+
+import {deepGroups,deepMetric,comparisonSample} from '../lib/club-deep-comparison.mjs';
+const definition=id=>deepGroups.flatMap(g=>g.metrics).find(m=>m.id===id);
+test('deep ratios use pooled attempts and retain zero and missing coverage separately',()=>{
+ const rows=[{match_event_aggregate_0:'215:1,216:1'},{match_event_aggregate_0:'215:9,216:1'},{match_event_aggregate_0:'214:0'},{}];
+ const rate=deepMetric(rows,definition('passRate'));assert.ok(Math.abs(rate.value-100*10/12)<1e-10);assert.equal(rate.covered,3);assert.equal(rate.available,4);assert.equal(rate.median,70);assert.equal(rate.deviation,20);
+ const count=deepMetric(rows,definition('completed'));assert.equal(count.total,10);assert.equal(count.perMatch,10/3);assert.equal(deepMetric([{}],definition('completed')).total,null);
+ assert.equal(deepMetric([{match_event_aggregate_0:'214:0'}],definition('passRate')).value,null);
+});
+test('deep metric eligibility is independent and residual errors cannot cancel across matches',()=>{
+ const rows=[{goals:'2',match_event_aggregate_0:'214:1,215:2,30:3'},{goals:'1',match_event_aggregate_0:'214:1,215:3,30:1'}];
+ const goals=deepMetric(rows,definition('goals'));assert.equal(goals.covered,1);assert.equal(goals.inconsistent,1);assert.equal(deepMetric(rows,definition('completed')).covered,2);
+ const residual=deepMetric(rows,definition('unknownDirectionMade'));assert.equal(residual.total,2);assert.equal(residual.covered,1);assert.equal(residual.inconsistent,1);
+ const overlap=deepMetric([{match_event_aggregate_0:'214:1,131:2'}],definition('weakFootShare'));assert.equal(overlap.value,null);assert.equal(overlap.inconsistent,1);
+});
+test('sample filters shared appearances, recorded position, type and stable player identities',()=>{
+ const a={playername:'left',pos:'forward'},b={playername:'right',pos:'midfielder'};
+ const m=(id,t,players,extra={})=>({matchId:id,timestamp:t,players:{'79638':players},...extra});
+ const rows=[m('1',1,{a,b}),m('2',2,{a:{...a,playername:'renamed'},b:{...b,pos:'forward'}}),m('3',3,{a}),m('4',4,{a,b},{matchType:'playoffMatch'})];
+ const all=comparisonSample([...rows,rows[0]],'left','right');assert.equal(all.left.length,3);assert.equal(all.right.length,2);assert.equal(all.commonCount,2);assert.equal(all.left[1].playername,'renamed');
+ const common=comparisonSample(rows,'left','right',{common:true,position:'forward'});assert.deepEqual(common.matches.map(m=>m.matchId),['2']);assert.equal(common.left.length,1);assert.equal(common.right.length,1);
+ const recent=comparisonSample(rows,'left','right',{window:'1'});assert.deepEqual(recent.matches.map(m=>m.matchId),['3']);assert.equal(recent.right.length,0);
+ assert.equal(comparisonSample(rows,'left','right',{matchType:'playoffMatch'}).matches.length,1);
+});
+test('stored LEO XI match comparison agrees with named goal and assist totals',()=>{
+ const sample=comparisonSample(snapshot.matches,snapshot.members[0].name,snapshot.members[1].name,{common:true});assert.ok(sample.commonCount>0);
+ for(const rows of [sample.left,sample.right]){const valid=rows.filter(r=>playerEvents(r));const contribution=deepMetric(rows,definition('contributions'));assert.equal(contribution.total,valid.reduce((n,r)=>n+Number(r.goals)+Number(r.assists),0));assert.equal(contribution.covered,valid.length);}
+});
