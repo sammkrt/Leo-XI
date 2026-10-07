@@ -1,6 +1,10 @@
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {CLUB_ID,uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
-type ClubData = {club:any;overall:any;members:any[];matches:any[];fetchedAt:string;mode:string;source:string;notice?:string};
+type ClubData = {club:any;overall:any;members:any[];matches:any[];fetchedAt:string;mode:string;source:string;notice?:string;syncFailure?:{code:string;endpoint?:string;at:string}};
+class SyncFailure extends Error {
+ code:string;endpoint?:string;
+ constructor(code:string,endpoint?:string){super(code);this.code=code;this.endpoint=endpoint}
+}
 type Attendance={player:string;status:'yes'|'maybe'|'no';updatedAt:string};
 export class ClubStore {
  state:DurableObjectState;
@@ -28,20 +32,28 @@ export class ClubStore {
  }
  async syncInternal():Promise<ClubData>{
   try{
-   const get=async(path:string):Promise<any>=>{const r=await fetch('https://proclubs.ea.com/api/fc/'+path,{signal:AbortSignal.timeout(14000),headers:{Accept:'application/json'}});if(!r.ok)throw Error('EA '+r.status);return r.json();};
+   const get=async(path:string):Promise<any>=>{
+    const endpoint=path.split('?')[0];let r:Response;
+    try{r=await fetch('https://proclubs.ea.com/api/fc/'+path,{signal:AbortSignal.timeout(14000),headers:{Accept:'application/json'}})}catch(error){throw new SyncFailure(error instanceof Error&&['TimeoutError','AbortError'].includes(error.name)?'EA_TIMEOUT':'EA_NETWORK',endpoint)}
+    if(!r.ok)throw new SyncFailure('EA_HTTP_'+r.status,endpoint);
+    try{return await r.json()}catch{throw new SyncFailure('EA_INVALID_JSON',endpoint)}
+   };
    const [clubs,overall,members,matches]=await Promise.all([get('allTimeLeaderboard/search?platform=common-gen5&clubName=LEO%20XI'),get('clubs/overallStats?platform=common-gen5&clubIds='+CLUB_ID),get('members/stats?platform=common-gen5&clubId='+CLUB_ID),get('clubs/matches?platform=common-gen5&clubIds='+CLUB_ID+'&matchType=leagueMatch&maxResultCount=10')]);
    const club=Array.isArray(clubs)&&clubs.find((c:any)=>String(c.clubId)===CLUB_ID);
-   if(!club||!overall?.[0]||String(overall[0].clubId)!==CLUB_ID||!Array.isArray(members?.members)||!members.members.length||!Array.isArray(matches))throw Error('EA yanıtı doğrulanamadı');
+   if(!club||!overall?.[0]||String(overall[0].clubId)!==CLUB_ID||!Array.isArray(members?.members)||!members.members.length||!Array.isArray(matches))throw new SyncFailure('EA_INVALID_DATA');
    const clean=uniqueMatches(matches);
    const data:ClubData={club,overall:overall[0],members:members.members,matches:clean,fetchedAt:new Date().toISOString(),mode:'live',source:'EA Clubs'};
    await this.state.storage.transaction(async(tx)=>{
-    await tx.put('latest',{...data,matches:[]});await tx.put('recentMatchIds',clean.map((m:any)=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');
+    await tx.put('latest',{...data,matches:[]});await tx.put('recentMatchIds',clean.map((m:any)=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
    });return data;
-  }catch{
-   const notice='EA kaynağına ulaşılamadı. Son doğrulanmış kayıt gösteriliyor.';
-   await this.state.storage.put({lastSyncAttempt:new Date().toISOString(),syncError:notice});
-   return {...(await this.latestData()),mode:'snapshot',notice};
+  }catch(error){
+   const failure={code:error instanceof SyncFailure?error.code:'STORAGE_WRITE_FAILED',endpoint:error instanceof SyncFailure?error.endpoint:undefined,at:new Date().toISOString()};
+   console.error('LEO XI sync failed',JSON.stringify(failure));
+   const reason=failure.code.startsWith('EA_HTTP_')?'EA servisi HTTP '+failure.code.slice(8)+' yanıtı verdi.':failure.code==='EA_TIMEOUT'?'EA isteği zaman aşımına uğradı.':failure.code==='EA_INVALID_JSON'||failure.code==='EA_INVALID_DATA'?'EA yanıtı doğrulanamadı.':failure.code==='STORAGE_WRITE_FAILED'?'Yeni veriler kaydedilemedi.':'EA kaynağına bağlantı kurulamadı.';
+   const notice=reason+' Son doğrulanmış kayıt gösteriliyor.';
+   await this.state.storage.put({lastSyncAttempt:failure.at,syncError:notice,syncFailure:failure});
+   return {...(await this.latestData()),mode:'snapshot',notice,syncFailure:failure};
   }
  }
  async fetch(request:Request):Promise<Response>{
@@ -52,7 +64,7 @@ export class ClubStore {
    const attempt=await this.state.storage.get<string>('lastSyncAttempt');
    if(!attempt||Date.now()-Date.parse(attempt)>120000)return json(await this.sync());
    const latest=await this.latestData();
-   const error=await this.state.storage.get<string>('syncError');return json(error?{...latest,mode:'snapshot',notice:error}:latest);
+   const error=await this.state.storage.get<string>('syncError');return json(error?{...latest,mode:'snapshot',notice:error,syncFailure:await this.state.storage.get('syncFailure')}:latest);
   }
   if(url.pathname==='/api/archive'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
