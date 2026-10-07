@@ -14,7 +14,7 @@ LEO XI FC27 Pro Clubs takımının gerçek EA verileriyle çalışan siyah–alt
 
 ## Yerel çalıştırma
 
-Node.js 22.16 veya üzeri, pnpm 11.25.0.
+Node.js 22.16 veya üzeri, pnpm 11.25.0.  
 
 ```bash
 corepack enable
