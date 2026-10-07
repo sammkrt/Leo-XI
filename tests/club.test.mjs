@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,weeklyAward,playerRates,validDay,amsterdamDay,matchTotals} from '../lib/club-model.mjs';
 import {ClubStore} from '../lib/club-store.ts';
+import {createRawExport,rawExportOptions,selectRawMatches} from '../lib/club-export.ts';
+import {finiteCounter,playerRows,filterPlayerRows,summarize,metrics,metricIds,groupSessions,defaultFilters,filterMatches,previousMatches,playerSummaries,teamSummary,pairSummaries,passingProfile,rollingTrend,buildAnalyticsReport,analyticsCSV,filtersFromSearch,filtersToSearch,rolePercentile,parseJournal,evidenceFor,matchEvidence,analyticsFilename} from '../lib/club-analytics.ts';
 class MemoryStorage{
  constructor(){this.values=new Map()}
  async get(key){return structuredClone(this.values.get(key))}
@@ -66,3 +68,286 @@ import {validateMatchFeed} from '../lib/club-feed.mjs';
 test('match-only collection archives new matches without making old club totals look fresh',async()=>{const oldFetch=globalThis.fetch;try{const s=state(),store=new ClubStore(s);await store.ready;const original=(await json(store,'/api/club')).data;const match=structuredClone(snapshot.matches[0]);match.matchId='999222111';const when=new Date().toISOString();globalThis.fetch=async()=>Response.json({clubId:'79638',matchType:'leagueMatch',matches:[match],fetchedAt:when});await store.sync();const club=(await json(store,'/api/club')).data,archive=(await json(store,'/api/archive')).data;assert.equal(club.fetchedAt,original.fetchedAt);assert.deepEqual(club.overall,original.overall);assert.equal(club.matches[0].matchId,match.matchId);assert.equal(archive.matches.length,11);assert.equal(archive.lastMatchUpdate,when);globalThis.fetch=async()=>Response.json({clubId:'79638',matchType:'leagueMatch',matches:[],fetchedAt:snapshot.fetchedAt});assert.equal((await store.sync()).syncFailure.code,'FEED_OLDER_DATA');assert.equal((await json(store,'/api/archive')).data.matches.length,11);}finally{globalThis.fetch=oldFetch}});
 test('legacy seed feed is used only while the dedicated match file is absent',async()=>{const oldFetch=globalThis.fetch;try{const store=new ClubStore(state());let urls=[];globalThis.fetch=async url=>{urls.push(String(url));return String(url).endsWith('matches.json')?new Response('',{status:404}):Response.json({...snapshot,fetchedAt:new Date().toISOString()})};assert.equal((await store.sync()).mode,'scheduled');assert.equal(urls.length,2);urls=[];globalThis.fetch=async url=>{urls.push(String(url));return new Response('',{status:403})};assert.equal((await store.sync()).syncFailure.code,'FEED_HTTP_403');assert.equal(urls.length,1);}finally{globalThis.fetch=oldFetch}});
 test('match feeds reject wrong clubs, duplicates, malformed matches and future data',()=>{const feed={clubId:'79638',matchType:'leagueMatch',matches:snapshot.matches,fetchedAt:new Date().toISOString()};assert.equal(validateMatchFeed(feed).matches.length,10);for(const invalid of [{...feed,clubId:'999'},{...feed,matchType:'playoffMatch'},{...feed,matches:[snapshot.matches[0],snapshot.matches[0]]},{...feed,matches:[{}]},{...feed,fetchedAt:new Date(Date.now()+3600000).toISOString()}])assert.throws(()=>validateMatchFeed(invalid));});
+
+const rawMatch=(id,when,extra={})=>({matchId:id,timestamp:Date.parse(when)/1000,clubs:{'79638':{goals:'2'},'42':{goals:'1',details:{name:'Rakip'}}},...extra});
+const rawIds=(rows,selection)=>selectRawMatches(rows,selection).map(match=>match.matchId);
+const exportTime='2026-10-07T12:00:00.000Z';
+
+test('raw all-time export includes every unique available match and preserves full records',()=>{
+ const rows=[...snapshot.matches,snapshot.matches[0]];
+ const exported=JSON.parse(createRawExport(rows,{scope:'all-time'},exportTime).json);
+ assert.equal(exported.matchCount,10);assert.equal(exported.matches.length,10);
+ assert.deepEqual(exported.matches,snapshot.matches);
+ assert.equal(exported.timezone,'Europe/Amsterdam');assert.equal(exported.exportedAt,exportTime);
+ assert.deepEqual(exported.selection,{});assert.equal(createRawExport(rows,{scope:'all-time'},exportTime).filename,'leo-xi-raw-all-time.json');
+});
+
+test('raw match export selects exactly one complete match without inventing a match type',()=>{
+ const rows=[rawMatch('1','2026-10-06T20:00:00Z'),rawMatch('2','2026-10-07T20:00:00Z')];
+ const file=createRawExport(rows,{scope:'match',key:'1'},exportTime),value=JSON.parse(file.json);
+ assert.deepEqual(value.matches,[rows[0]]);assert.deepEqual(value.selection,{matchId:'1'});
+ assert.equal(value.matchCount,1);assert.equal(file.filename,'leo-xi-raw-match-1.json');
+ assert.equal('matchType' in value.matches[0],false);
+ const option=rawExportOptions(rows,'match').find(row=>row.key==='1');
+ assert.match(option.label,/Rakip/);assert.match(option.label,/2:1/);assert.match(option.label,/22:00/);
+});
+
+test('raw sessions use Amsterdam calendar days and are ordered newest first with unique counts',()=>{
+ const rows=[rawMatch('1','2026-10-06T21:59:00Z'),rawMatch('2','2026-10-06T22:00:00Z'),rawMatch('3','2026-10-07T01:00:00Z')];
+ const options=rawExportOptions([...rows,rows[2]],'session');
+ assert.deepEqual(options.map(({key,matchCount})=>({key,matchCount})),[{key:'2026-10-07',matchCount:2},{key:'2026-10-06',matchCount:1}]);
+ assert.deepEqual(rawIds(rows,{scope:'session',key:'2026-10-07'}),['3','2']);
+ assert.equal(createRawExport(rows,{scope:'session',key:'2026-10-07'},exportTime).filename,'leo-xi-raw-session-2026-10-07.json');
+});
+
+test('raw calendar weeks group different days and split at Amsterdam Monday midnight',()=>{
+ const rows=[rawMatch('1','2026-09-28T12:00:00Z'),rawMatch('2','2026-10-04T21:59:00Z'),rawMatch('3','2026-10-04T22:00:00Z'),rawMatch('4','2026-10-07T12:00:00Z')];
+ const options=rawExportOptions(rows,'week');
+ assert.deepEqual(options.map(row=>[row.key,row.matchCount]),[['2026-W41',2],['2026-W40',2]]);
+ assert.deepEqual(rawIds(rows,{scope:'week',key:'2026-W41'}),['4','3']);
+ assert.match(options[0].label,/05 Ekim 2026/);assert.match(options[0].label,/11 Ekim 2026/);
+ assert.equal(createRawExport(rows,{scope:'week',key:'2026-W41'},exportTime).filename,'leo-xi-raw-week-2026-W41.json');
+});
+
+test('raw ISO week year is correct across New Year including week 53',()=>{
+ const rows=[rawMatch('1','2020-12-31T12:00:00Z'),rawMatch('2','2021-01-03T22:59:00Z'),rawMatch('3','2021-01-03T23:00:00Z'),rawMatch('4','2021-01-07T12:00:00Z')];
+ assert.deepEqual(rawExportOptions(rows,'week').map(row=>[row.key,row.matchCount]),[['2021-W01',2],['2020-W53',2]]);
+ assert.deepEqual(rawIds(rows,{scope:'week',key:'2020-W53'}),['2','1']);
+});
+
+test('raw month grouping uses Amsterdam midnight and includes all days in the chosen month',()=>{
+ const rows=[rawMatch('1','2026-09-30T21:59:00Z'),rawMatch('2','2026-09-30T22:00:00Z'),rawMatch('3','2026-10-20T12:00:00Z')];
+ assert.deepEqual(rawExportOptions(rows,'month').map(row=>[row.key,row.matchCount]),[['2026-10',2],['2026-09',1]]);
+ assert.deepEqual(rawIds(rows,{scope:'month',key:'2026-10'}),['3','2']);
+ assert.equal(createRawExport(rows,{scope:'month',key:'2026-10'},exportTime).filename,'leo-xi-raw-month-2026-10.json');
+});
+
+test('raw calendar grouping respects winter offsets and DST transitions',()=>{
+ const rows=[rawMatch('1','2026-03-29T00:30:00Z'),rawMatch('2','2026-03-29T01:30:00Z'),rawMatch('3','2026-10-25T00:30:00Z'),rawMatch('4','2026-10-25T01:30:00Z'),rawMatch('5','2026-10-25T22:59:00Z'),rawMatch('6','2026-10-25T23:00:00Z')];
+ assert.deepEqual(rawExportOptions(rows,'session').map(row=>[row.key,row.matchCount]),[['2026-10-26',1],['2026-10-25',3],['2026-03-29',2]]);
+ assert.deepEqual(rawIds(rows,{scope:'session',key:'2026-10-25'}),['5','4','3']);
+ assert.deepEqual(rawIds(rows,{scope:'week',key:'2026-W44'}),['6']);
+});
+
+test('raw export leaves missing values, both teams, counters and unknown nested fields untouched',()=>{
+ const row=rawMatch('1','2026-10-07T12:00:00Z',{clubs:{'79638':{goals:null},'42':{details:{name:'Rakip'},unknownClubField:[1,null]}},players:{'79638':{a:{playername:'A',match_event_aggregate_0:'214:0,215:7',futureField:{value:null}}},'42':{b:{playername:'B',goals:'0'}}},unknownMatchField:{nested:[0,null,{source:'EA'}]}});
+ const before=structuredClone(row);
+ function freeze(value){if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value)}}
+ freeze(row);
+ const parsed=JSON.parse(createRawExport([row],{scope:'match',key:'1'},exportTime).json);
+ assert.deepEqual(parsed.matches,[before]);assert.deepEqual(row,before);
+ assert.equal('goals' in parsed.matches[0].players['79638'].a,false);
+ assert.equal(parsed.matches[0].clubs['79638'].goals,null);
+ assert.equal(selectRawMatches([row],{scope:'all-time'})[0],row);
+ const option=rawExportOptions([row],'match')[0];assert.match(option.label,/—:—/);
+});
+
+test('raw empty and unavailable selections contain no fabricated records',()=>{
+ for(const scope of ['all-time','session','match','week','month']){
+  const selection=scope==='all-time'?{scope}:{scope,key:'missing'};
+  assert.deepEqual(rawExportOptions([],scope),[]);assert.equal(selectRawMatches([],selection).length,0);
+  assert.equal(JSON.parse(createRawExport([],selection,exportTime).json).matchCount,0);
+ }
+ const rows=[rawMatch('1','2026-10-07T12:00:00Z')];
+ for(const scope of ['session','match','week','month'])assert.deepEqual(selectRawMatches(rows,{scope,key:'missing'}),[]);
+});
+
+test('raw duplicate IDs are exported once with the existing last-record-wins policy',()=>{
+ const first=rawMatch('1','2026-10-06T12:00:00Z',{rawField:'old'}),last=rawMatch('1','2026-10-07T12:00:00Z',{rawField:'verified'});
+ assert.deepEqual(selectRawMatches([first,last],{scope:'all-time'}),[last]);
+ assert.deepEqual(rawExportOptions([first,last],'session').map(row=>[row.key,row.matchCount]),[['2026-10-07',1]]);
+ assert.equal(JSON.parse(createRawExport([first,last],{scope:'match',key:'1'},exportTime).json).matches[0].rawField,'verified');
+});
+
+test('raw filenames and JSON serialization are deterministic without reordering or mutating input',()=>{
+ const a=rawMatch('2','2026-10-07T12:00:00Z'),b=rawMatch('1','2026-10-07T12:00:00Z');const rows=[a,b];
+ const before=structuredClone(rows);
+ assert.deepEqual(createRawExport(rows,{scope:'all-time'},exportTime),createRawExport([b,a],{scope:'all-time'},exportTime));
+ assert.deepEqual(rawIds(rows,{scope:'all-time'}),['1','2']);assert.deepEqual(rows,before);
+});
+
+
+test('raw ID grouping follows archive string identity without changing the original ID field',()=>{
+ const rows=[rawMatch('1','2026-10-07T12:00:00Z'),rawMatch(1,'2026-10-07T12:00:00Z')];
+ const exported=JSON.parse(createRawExport(rows,{scope:'match',key:'1'},exportTime).json);
+ assert.equal(exported.matchCount,1);assert.equal(exported.matches[0].matchId,1);
+ assert.equal(rawExportOptions(rows,'match')[0].key,'1');
+});
+
+test('raw export keeps sparse records even when clubs and players are missing',()=>{
+ const row={matchId:'19',timestamp:Date.parse('2026-10-07T12:00:00Z')/1000,unknown:{events:[null,0,'7']}};
+ for(const selection of [{scope:'all-time'},{scope:'match',key:'19'},{scope:'session',key:'2026-10-07'},{scope:'week',key:'2026-W41'},{scope:'month',key:'2026-10'}]){
+  const value=JSON.parse(createRawExport([row],selection,exportTime).json);
+  assert.deepEqual(value.matches,[row]);assert.equal(value.matchCount,1);
+  assert.equal('clubs' in value.matches[0],false);assert.equal('players' in value.matches[0],false);
+ }
+ assert.match(rawExportOptions([row],'match')[0].label,/—:—/);
+});
+
+test('raw export round-trips complete Durable Object archive records including unknown fields',async()=>{
+ const s=state(),store=new ClubStore(s);await store.ready;
+ const raw=structuredClone(snapshot.matches[0]);raw.matchId='991234567';
+ raw.futureRawField={nested:[null,0,{counter:'12'}]};
+ const opponent=Object.keys(raw.clubs).find(id=>id!=='79638');
+ raw.clubs[opponent].futureRawClubField={events:[1,2]};
+ await s.storage.put('match:'+raw.matchId,raw);
+ const archive=(await json(new ClubStore(s),'/api/archive')).data;
+ const file=createRawExport(archive.matches,{scope:'match',key:raw.matchId},exportTime);
+ assert.deepEqual(JSON.parse(file.json).matches,[raw]);
+ assert.deepEqual(await s.storage.get('match:'+raw.matchId),raw);
+});
+
+const analysisMatch=(id,when,players={},goals='2',conceded='1')=>rawMatch(id,when,{players:{'79638':players},clubs:{'79638':{goals},'42':{goals:conceded,details:{name:'Rakip'}}}});
+const analysisPlayer=(extra={})=>({playername:'Oyuncu',pos:'midfielder',...extra});
+
+test('analytics counters distinguish null, zero, malformed, negative and nonfinite data',()=>{
+ for(const value of [undefined,null,'',' ',false,{},[],Infinity,-1,'NaN'])assert.equal(finiteCounter(value),null);
+ assert.equal(finiteCounter('0'),0);assert.equal(finiteCounter(0),0);assert.equal(finiteCounter('8.5'),8.5);
+ const rows=playerRows([analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({goals:'0'})})]);
+ assert.equal(summarize(rows,'goals').value,0);assert.equal(summarize(rows,'shots').value,null);
+ assert.equal(summarize(rows,'goals').covered,1);assert.equal(summarize(rows,'shots').covered,0);
+});
+
+test('analytics pass rates pool numerator and denominator instead of averaging percentages',()=>{
+ const rows=playerRows([analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({passesmade:'1',passattempts:'1'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({passesmade:'20',passattempts:'100'})})]);
+ const rate=summarize(rows,'passRate');assert.equal(rate.value,21/101*100);assert.equal(rate.numerator,21);assert.equal(rate.denominator,101);assert.equal(rate.covered,2);
+ const zero=playerRows([analysisMatch('3','2026-10-08T12:00Z',{p:analysisPlayer({passesmade:'0',passattempts:'0'})})]);
+ assert.equal(summarize(zero,'passRate').value,null);assert.equal(summarize(zero,'passRate').covered,1);assert.equal(summarize(zero,'passAttempts').value,0);
+});
+
+test('analytics player per-match denominator uses each metric valid appearances',()=>{
+ const rows=playerRows([analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({goals:'2',shots:'8'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({goals:'0'})}),analysisMatch('3','2026-10-09T12:00Z',{p:analysisPlayer({goals:null})})]);
+ assert.equal(summarize(rows,'goals').perMatch,1);assert.equal(summarize(rows,'goals').covered,2);assert.equal(summarize(rows,'goals').available,3);assert.equal(summarize(rows,'shots').perMatch,8);
+ const inconsistent=playerRows([analysisMatch('4','2026-10-10T12:00Z',{p:analysisPlayer({passesmade:'5',passattempts:'2',goals:'1'})})]);
+ assert.equal(summarize(inconsistent,'passRate').value,null);assert.equal(summarize(inconsistent,'goals').value,1);
+});
+
+test('analytics joins stable player IDs across names and preserves recorded role changes',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({playername:'Eski',pos:'defender',goals:'1'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({playername:'Yeni',pos:'midfielder',goals:'2'}),q:analysisPlayer({playername:'Eski',goals:'0'})})];
+ const summaries=playerSummaries(matches,defaultFilters),p=summaries.find(p=>p.id==='p');assert.equal(p.name,'Yeni');assert.deepEqual(p.aliases,['Yeni','Eski']);assert.equal(p.matches,2);assert.equal(summaries.length,2);assert.deepEqual(new Set(p.roles),new Set(['defender','midfielder']));
+ const rows=filterPlayerRows(matches,{playerIds:['p'],role:'defender'});assert.equal(rows.length,1);assert.equal(summarize(rows,'goals').value,1);
+ const dup=playerRows([...matches,matches[0]]);assert.equal(dup.length,3);assert.equal(summarize([...dup,...dup],'goals').total,3);
+});
+
+test('analytics sessions cross Amsterdam midnight and split only at the configurable time gap',()=>{
+ const matches=[analysisMatch('1','2026-10-06T21:50Z'),analysisMatch('2','2026-10-06T22:10Z'),analysisMatch('3','2026-10-07T00:10Z'),analysisMatch('4','2026-10-07T03:00Z')];
+ const sessions=groupSessions(matches,120);assert.equal(sessions.length,2);assert.deepEqual(sessions[1].matches.map(m=>m.matchId),['1','2','3']);
+ assert.equal(groupSessions(matches,30).length,3);
+ const selected=filterMatches(matches,{...defaultFilters,scope:'session',key:'1'});assert.deepEqual(selected.map(m=>m.matchId),['3','2','1']);
+});
+
+test('analytics sessions use real elapsed time across both DST transitions',()=>{
+ const spring=[analysisMatch('1','2026-03-29T00:30Z'),analysisMatch('2','2026-03-29T01:30Z')];
+ const fall=[analysisMatch('3','2026-10-25T00:30Z'),analysisMatch('4','2026-10-25T01:30Z')];
+ assert.equal(groupSessions(spring,60).length,1);assert.equal(groupSessions(fall,60).length,1);assert.equal(groupSessions(fall,30).length,2);
+});
+
+test('analytics calendar and custom scopes apply Amsterdam date boundaries',()=>{
+ const matches=[analysisMatch('1','2026-09-30T21:59Z'),analysisMatch('2','2026-09-30T22:00Z'),analysisMatch('3','2026-10-04T22:00Z')];
+ assert.deepEqual(filterMatches(matches,{...defaultFilters,scope:'month',key:'2026-10'}).map(m=>m.matchId),['3','2']);
+ assert.deepEqual(filterMatches(matches,{...defaultFilters,scope:'week',key:'2026-W41'}).map(m=>m.matchId),['3']);
+ assert.deepEqual(filterMatches(matches,{...defaultFilters,scope:'custom',from:'2026-10-01',to:'2026-10-01'}).map(m=>m.matchId),['2']);
+ assert.deepEqual(filterMatches(matches,{...defaultFilters,scope:'custom',from:'2026-02-30',to:'2026-10-01'}),[]);
+});
+
+test('analytics previous equal match sample excludes current records and preserves filters',()=>{
+ const matches=Array.from({length:12},(_,i)=>analysisMatch(String(i+1),`2026-10-${String(i+1).padStart(2,'0')}T12:00Z`,{p:analysisPlayer({goals:'1'})}));
+ const filters={...defaultFilters,scope:'last5'},selected=filterMatches(matches,filters),previous=previousMatches(matches,selected,filters);
+ assert.deepEqual(selected.map(m=>m.matchId),['12','11','10','9','8']);assert.deepEqual(previous.map(m=>m.matchId),['7','6','5','4','3']);
+ assert.equal(new Set([...selected,...previous].map(m=>m.matchId)).size,10);
+});
+
+test('analytics previous calendar span is stable across DST, with custom overlap excluded',()=>{
+ const matches=[analysisMatch('1','2026-03-22T12:00Z'),analysisMatch('2','2026-03-23T12:00Z'),analysisMatch('3','2026-03-29T12:00Z'),analysisMatch('4','2026-03-30T12:00Z')];
+ const filters={...defaultFilters,scope:'week',key:'2026-W14'},selected=filterMatches(matches,filters);
+ assert.deepEqual(previousMatches(matches,selected,filters).map(m=>m.matchId),['3','2']);
+ assert.deepEqual(previousMatches(matches,selected,{...filters,compare:'custom',compareFrom:'2026-03-29',compareTo:'2026-03-30'}).map(m=>m.matchId),['3']);
+});
+
+test('analytics club scores are separate from career totals and summed goal contributions',()=>{
+ const match=analysisMatch('1','2026-10-07T12:00Z',{a:analysisPlayer({goals:'1',assists:'1'}),b:analysisPlayer({goals:'1',assists:'1'})});
+ assert.equal(teamSummary([match]).goals,2);assert.equal(summarize(playerRows([match]),'contributions').total,4);
+ const report=buildAnalyticsReport(snapshot.matches,defaultFilters,exportTime);assert.equal(report.team.matches,uniqueMatches(snapshot.matches).length);assert.equal('overall' in report,false);assert.equal('per90' in metrics,false);
+ const absent=analysisMatch('2','2026-10-08T12:00Z',{},null,null);assert.equal(teamSummary([absent]).goals,null);assert.equal(teamSummary([absent]).covered,0);assert.equal(teamSummary([absent]).pointsPerMatch,null);
+});
+
+test('analytics direction and length partitions reject contradictory rows before pooling',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({match_event_aggregate_0:'215:5,216:1,30:3,31:1,32:1,24:2,26:2'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({match_event_aggregate_0:'215:1,216:0,30:4,24:3'})})];
+ const rows=playerRows(matches),direction=passingProfile(rows,'direction'),length=passingProfile(rows,'length');
+ assert.equal(direction.covered,1);assert.equal(length.covered,1);assert.equal(direction.rows.reduce((a,r)=>a+r.made,0),5);assert.equal(direction.rows.reduce((a,r)=>a+r.failed,0),1);
+ assert.equal(summarize(rows,'forwardRate').covered,1);assert.equal(summarize(rows,'forwardRate').value,75);
+ assert.equal(passingProfile([], 'direction').rows[0].made,null);
+});
+
+test('analytics event families do not add overlapping defense counters or invent dribble success',()=>{
+ const rows=playerRows([analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({tacklesmade:'3',match_event_aggregate_0:'6:2,108:4,174:1'})})]);
+ assert.equal(summarize(rows,'interceptions').total,2);assert.equal(summarize(rows,'wins').total,4);assert.equal(summarize(rows,'tackleMade').total,3);
+ assert.equal('defenseTotal' in metrics,false);assert.equal('dribbleRate' in metrics,false);
+});
+
+test('analytics population deviation requires two valid observations',()=>{
+ const rows=playerRows([analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({rating:'6'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({rating:'8'})})]);
+ assert.equal(summarize(rows,'rating').value,7);assert.equal(summarize(rows,'ratingDeviation').value,1);assert.equal(summarize(rows.slice(0,1),'ratingDeviation').value,null);
+});
+
+test('analytics rolling rate pools raw attempts and counts retain observed zero',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({passesmade:'1',passattempts:'1',goals:'0'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({passesmade:'9',passattempts:'99',goals:'2'})})];
+ const report=buildAnalyticsReport(matches,defaultFilters,exportTime);
+ assert.deepEqual(rollingTrend(report.trend,'passRate'),[100,10]);assert.deepEqual(rollingTrend(report.trend,'goals'),[0,1]);
+});
+
+test('analytics pair sample is shared appearances and low samples are not ranked',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{a:analysisPlayer(),b:analysisPlayer()}),analysisMatch('2','2026-10-08T12:00Z',{a:analysisPlayer()})];
+ const pairs=pairSummaries(matches,{...defaultFilters,minMatches:3});assert.equal(pairs.length,1);assert.equal(pairs[0].matches,1);assert.equal(pairs[0].sufficient,false);assert.deepEqual(pairs[0].matchIds,['1']);
+});
+
+test('analytics role percentile needs sufficient peers and refuses changed roles',()=>{
+ const matches=Array.from({length:3},(_,i)=>analysisMatch(String(i+1),`2026-10-0${i+1}T12:00Z`,Object.fromEntries(Array.from({length:5},(_,j)=>['p'+j,analysisPlayer({goals:String(j)})]))));
+ const players=playerSummaries(matches,defaultFilters);assert.equal(rolePercentile(players,players[0],'goals').value,0);assert.equal(rolePercentile(players,players[4],'goals').value,100);assert.equal(rolePercentile(players.slice(0,4),players[0],'goals'),null);
+ const changed={...players[0],roles:['defender','midfielder']};assert.equal(rolePercentile(players,changed,'goals'),null);
+});
+
+test('analytics URL filters round-trip selected IDs and preserve unrelated parameters',()=>{
+ const filters={...defaultFilters,scope:'custom',from:'2026-10-01',to:'2026-10-07',playerIds:['a','b'],role:'defender',view:'players',minMatches:3,gapMinutes:90};
+ const query=filtersToSearch(filters,'keep=present');assert.equal(new URLSearchParams(query).get('keep'),'present');assert.deepEqual(filtersFromSearch(query),filters);
+ const bad=filtersFromSearch('leo_scope=unsupported&leo_gap=-5&leo_from=2026-02-30&leo_minMatches=NaN');assert.equal(bad.scope,'all');assert.equal(bad.gapMinutes,15);assert.equal(bad.from,'');assert.equal(bad.minMatches,1);
+});
+
+test('analytics filtered CSV and JSON use the same measured sample without mutating raw records',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({goals:'2',passesmade:'8',passattempts:'10'})}),analysisMatch('2','2026-10-08T12:00Z',{p:analysisPlayer({goals:'0'})})],before=structuredClone(matches);
+ const report=buildAnalyticsReport(matches,{...defaultFilters,scope:'match',key:'1'},exportTime),csv=analyticsCSV(report);
+ assert.equal(report.matchCount,1);assert.deepEqual(report.matchIds,['1']);assert.equal(report.players[0].metrics.passRate.value,80);
+ assert.ok(csv.includes('"passRate","80","%","8","8","10","1","1","1"'));assert.deepEqual(JSON.parse(JSON.stringify(report)).matchIds,report.matchIds);assert.deepEqual(matches,before);
+ const hostile=buildAnalyticsReport([analysisMatch('3','2026-10-08T12:00Z',{p:analysisPlayer({playername:'=FORMULA',goals:'0'})})],defaultFilters,exportTime);assert.ok(analyticsCSV(hostile).includes("'=FORMULA"));
+});
+
+test('analytics tactical notes validate local persisted structure and filter without changing EA data',()=>{
+ assert.deepEqual(parseJournal('broken'),{});assert.deepEqual(parseJournal('[]'),{});
+ const journal=parseJournal(JSON.stringify({'match:1':{formation:'4-3-3',tactic:'Kısa çıkış',role:4,note:'x'.repeat(1200)},bad:null}));
+ assert.equal(journal['match:1'].role,'');assert.equal(journal['match:1'].note.length,1000);
+ const matches=[analysisMatch('1','2026-10-07T12:00Z'),analysisMatch('2','2026-10-08T12:00Z')];assert.deepEqual(filterMatches(matches,{...defaultFilters,tag:'kısa'},journal).map(m=>m.matchId),['1']);
+});
+
+test('analytics missing history does not create development arrows or evidence',()=>{
+ const matches=[analysisMatch('1','2026-10-07T12:00Z',{p:analysisPlayer({goals:'0'})})];
+ const report=buildAnalyticsReport(matches,defaultFilters,exportTime);assert.deepEqual(report.previousPlayers,[]);assert.deepEqual(evidenceFor(matches,[]),[]);
+ for(const id of metricIds){assert.ok(metrics[id].source.length);assert.ok(metrics[id].formula);assert.ok(metrics[id].limitation);}
+});
+
+
+test('analytics role filters retain role-change history and count percentiles use appearance rates',()=>{
+ const matches=Array.from({length:4},(_,i)=>analysisMatch(String(i+1),`2026-10-0${i+1}T12:00Z`,Object.fromEntries(Array.from({length:5},(_,j)=>['p'+j,analysisPlayer({goals:String(j),pos:i===3&&j===0?'defender':'midfielder'})]))));
+ const filtered=playerSummaries(matches,{...defaultFilters,role:'midfielder'});assert.deepEqual(new Set(filtered.find(p=>p.id==='p0').roles),new Set(['defender','midfielder']));assert.equal(rolePercentile(filtered,filtered.find(p=>p.id==='p0'),'goals'),null);
+ const uniform=playerSummaries(matches.slice(0,3),defaultFilters),less={...uniform[2],metrics:{...uniform[2].metrics,goals:{...uniform[2].metrics.goals,value:100,perMatch:1}}};
+ assert.equal(rolePercentile([...uniform.filter(p=>p.id!==less.id),less],less,'goals').value,37.5);
+});
+
+test('analytics single-match evidence uses only preceding valid matches with at least three samples',()=>{
+ const matches=Array.from({length:5},(_,i)=>analysisMatch(String(i+1),`2026-10-0${i+1}T12:00Z`,{p:analysisPlayer({passesmade:String(i+1),passattempts:'10'})}));
+ assert.equal(matchEvidence(matches[3],matches).length,1);assert.equal(matchEvidence(matches[2],matches).length,0);assert.ok(matchEvidence(matches[3],matches)[0].evidence.includes('20.00'));assert.deepEqual(matchEvidence(matches[3],matches)[0].matchIds,['4']);
+});
+
+test('analytics export filenames and dictionary include date, team and score provenance',()=>{
+ assert.equal(analyticsFilename({...defaultFilters,scope:'week',key:'2026-W41'},'json','2026-10-07'),'leo-xi-team-week-2026-W41-2026-10-07.json');
+ const report=buildAnalyticsReport([],defaultFilters,exportTime);assert.ok(report.dictionary.find(m=>m.id==='pointsPerMatch').formula.includes('geçerli'));assert.deepEqual(report.matchIds,[]);assert.equal(report.team.pointsPerMatch,null);
+});

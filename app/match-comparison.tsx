@@ -1,7 +1,8 @@
 'use client';
 import {useMemo,useState} from 'react';
 import {comparisonSample,deepGroups,deepMetric} from '../lib/club-deep-comparison.mjs';
-type Props={matches:any[];left:Record<string,unknown>;right:Record<string,unknown>;single?:boolean};
+import type {Match,MatchPlayer} from '../lib/club-types';
+type Props={matches:Match[];left:Record<string,unknown>;right:Record<string,unknown>;single?:boolean};
 const num=(n:number|null,d=2)=>n===null?'—':n.toLocaleString('tr-TR',{maximumFractionDigits:d});
 const roles:Record<string,string>={forward:'Forvet',midfielder:'Orta saha',defender:'Defans',goalkeeper:'Kaleci'};
 const day=(n:number)=>new Date(n*1000).toLocaleDateString('tr-TR',{timeZone:'Europe/Amsterdam',day:'2-digit',month:'short'});
@@ -23,7 +24,7 @@ export default function MatchComparison({matches,left,right,single=false}:Props)
  const names=single?[String(left.proName||left.name)]:[String(left.proName||left.name),String(right.proName||right.name)];
  const rowSets=single?[sample.left]:[sample.left,sample.right];
  const contribution=deepGroups[0].metrics.find(m=>m.id==='contributions')!;
- const summary=(rows:any[])=>deepMetric(rows,contribution);
+ const summary=(rows:MatchPlayer[])=>deepMetric(rows,contribution);
  return <div className="matchComparison">
   <div className="deepFilters"><label>Maç örneklemi<select value={window} onChange={e=>setWindow(e.target.value)}><option value="all">Tüm kayıtlar</option><option value="5">Son 5 uygun maç</option><option value="10">Son 10 uygun maç</option></select></label><label>Kayıttaki pozisyon<select value={position} onChange={e=>setPosition(e.target.value)}><option value="all">Tüm pozisyonlar</option>{Object.entries(roles).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><label>Maç türü<select value={selectedType} onChange={e=>setMatchType(e.target.value)}>{types.map(type=><option key={type} value={type}>{type==='leagueMatch'?'Lig maçları':type}</option>)}</select></label>{!single&&<label className="commonToggle"><input type="checkbox" checked={common} onChange={e=>setCommon(e.target.checked)}/>Yalnız ortak maçlar</label>}</div>
   <div className="deepCoverage"><strong>{sample.matches.length} uygun maç{!single&&` · ${sample.commonCount} ortak maç`}</strong><span>{names[0]}: {sample.left.length} kayıt{!single&&` · ${names[1]}: ${sample.right.length} kayıt`}</span>{sample.matches.length>0&&<span>{day(sample.matches[sample.matches.length-1].timestamp)} – {day(sample.matches[0].timestamp)}</span>}</div>
