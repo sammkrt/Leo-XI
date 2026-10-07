@@ -15,6 +15,10 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 const localBindingConfig = {
+  name: "leo-xi",
+  durable_objects: { bindings: [{name: "CLUB_STORE", class_name: "ClubStore"}] },
+  migrations: [{tag: "leo-xi-v1", new_sqlite_classes: ["ClubStore"]}],
+  triggers: {crons: ["*/30 * * * *"]},
   main: "./build/sites-worker.ts",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
