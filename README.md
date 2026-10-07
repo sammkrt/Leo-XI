@@ -118,3 +118,9 @@ Cloudflare önce maç dosyasını okur. İlk maç dosyası henüz yoksa (yalnız
 `scripts/fetch-ea-json.py` Python standart kütüphanesindeki urllib ile yalnız izin verilen FC uç noktalarını çağırır. Accept-Language, Sec-Fetch-Site ve istemci uyumluluk başlıkları topluluk istemcisindeki gözleme dayanır: https://github.com/1erkandogan/fc27-clubs-api . Üçüncü taraf kod veya paket çalıştırılmaz; çerez, kullanıcı kimlik bilgisi, ek proxy veya TLS doğrulamasını kapatma kullanılmaz. EA'nın kendi karar mekanizması görünmediğinden tek bir başlığın hatanın kesin nedeni olduğu ileri sürülmez.
 
 Günlük ve push çalışmaları yalnız çalışan yöntemi kullanır. Actions → Run workflow → diagnostics seçeneği istenirse aynı runner üzerinde iki ek karşılaştırma isteği yapar. Hata durumunda yalnız HTTP kodu ve varsa EA referans numarası günlüğe yazılır; hata sayfasının tamamı yayımlanmaz. Yanıtlar doğrulanmadan kalıcı veri güncellenmez.
+
+## Performans laboratuvarı
+
+Analiz sekmesindeki takım, oyuncu, maç, seans, gelişim ve birlikte oynama görünümleri kayıtlı maçları ortak filtreler ve kaynak bağlantılarıyla açıklar. CSV/JSON, tam ham kayıt indirme ve tarayıcı PDF raporu bulunur. Seans, hesaplama, kapsam ve eksik veri sözleşmeleri: [Performans analizi](docs/ANALYTICS.md).
+
+Son 10 maç penceresinde kayıt kaçırma riskini azaltmak için toplama işi Amsterdam saatiyle maç gecesi boyunca 19:17, 21:17, 23:17 ve 01:17’de de çalışır. Mevcut 03:17–06:17 gece sonu denemeleri korunur. Her çalışmada tek maç isteği yapılır; bu zamanlama garanti veya eski eksik maçları geri getirme yöntemi değildir.

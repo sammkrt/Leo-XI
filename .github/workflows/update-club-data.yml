@@ -1,7 +1,17 @@
 name: Update EA club data
 on:
   schedule:
-    # Four chances after match night, following Amsterdam daylight saving time.
+    # Capture during match night to reduce the last-10 window risk. This is a
+    # bounded single request per run, not an EA retry loop or page-triggered fetch.
+    - cron: '17 19 * * *'
+      timezone: Europe/Amsterdam
+    - cron: '17 21 * * *'
+      timezone: Europe/Amsterdam
+    - cron: '17 23 * * *'
+      timezone: Europe/Amsterdam
+    - cron: '17 1 * * *'
+      timezone: Europe/Amsterdam
+    # Retain the four chances after match night and the existing failure policy.
     - cron: '17 3 * * *'
       timezone: Europe/Amsterdam
     - cron: '17 4 * * *'

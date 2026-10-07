@@ -2,10 +2,11 @@
 import {useState} from 'react';
 import MatchComparison from './match-comparison';
 import {comparisonGroups,comparisonValue,betterSide} from '../lib/club-comparison.mjs';
+import type {Match} from '../lib/club-types';
 type Member=Record<string,unknown>;
 const format=(value:number|null,kind:string,mode:string)=>value===null?'—':value.toLocaleString('tr-TR',{minimumFractionDigits:kind==='rating'?1:kind==='count'&&mode==='perGame'?2:0,maximumFractionDigits:kind==='rating'?1:kind==='count'&&mode==='perGame'?2:2})+(kind==='percent'?'%':kind==='height'?' cm':'');
 const raw=(value:unknown)=>value===undefined||value===null?'—':typeof value==='object'?JSON.stringify(value):String(value);
-export default function PlayerComparison({left,right,matches}:{left:Member;right:Member;matches:any[]}){
+export default function PlayerComparison({left,right,matches}:{left:Member;right:Member;matches:Match[]}){
  const [mode,setMode]=useState('perGame');
  const [source,setSource]=useState('club');
  const keys=Array.from(new Set([...Object.keys(left),...Object.keys(right)])).sort();
