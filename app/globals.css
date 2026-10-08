@@ -109,3 +109,30 @@ footer,footer>div>span{font-size:12px;color:#9a9fa9}
  .modal.playerModal{padding:24px 18px}
  .playerDeepTable th:first-child{width:48%}
 }
+
+/* Semantic score colours inspired by the club analytics reference. */
+:root{--win:#5de6a1;--draw:#ffd166;--loss:#ff7485;--cyan:#62dfd0;--violet:#b29aff}
+.heroRecord>div:nth-child(1)>strong,.archiveTotals>span:nth-child(2),.greenText{color:var(--win)!important}
+.heroRecord>div:nth-child(2)>strong,.archiveTotals>span:nth-child(3){color:var(--draw)!important}
+.heroRecord>div:nth-child(3)>strong,.archiveTotals>span:nth-child(4){color:var(--loss)!important}
+.archiveTotals>span:nth-child(5)>strong{color:var(--cyan)}
+.statGrid .stat:nth-child(2) strong{color:var(--win)}
+.statGrid .stat:nth-child(3) strong{color:var(--cyan)}
+.statGrid .stat:nth-child(4) strong{color:var(--draw)}
+.statGrid .stat:nth-child(2):after{background:#5de6a112}
+.statGrid .stat:nth-child(3):after{background:#62dfd012}
+.statGrid .stat:nth-child(4):after{background:#ffd16612}
+.formBadge.G,.result.G{background:#153a2b;color:var(--win);border-color:#5de6a148}
+.formBadge.B,.result.B{background:#3b321d;color:var(--draw);border-color:#ffd16648}
+.formBadge.M,.result.M{background:#3e222c;color:var(--loss);border-color:#ff748548}
+.chartLegend span:first-child{color:var(--cyan)}
+.chartLegend span:first-child i{border-color:var(--cyan)}
+.chartLegend span:last-child{color:var(--loss)}
+.chartLegend span:last-child i{border-color:var(--loss)}
+.playerButton:hover strong,.matchRow:hover .matchNames strong{color:var(--cyan)}
+.rating{color:var(--win);background:#5de6a110;border-color:#5de6a135}
+.detailPage .heroCopy h1 span:before{content:" "}
+@media(max-width:520px){
+ .heroRecord{gap:18px;justify-content:space-between}
+ .archiveTotals{gap:10px 18px}
+}

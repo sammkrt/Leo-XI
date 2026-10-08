@@ -889,3 +889,28 @@
   .zonePitch span, .zonePitch small { font-size: 12px; }
 }
 
+@media screen {
+  .analyticsViewTabs button.chosen {
+    background: #62dfd014;
+    border-color: #62dfd05c;
+    color: var(--cyan);
+    box-shadow: inset 0 -2px 0 var(--cyan);
+  }
+  .analyticsViewTabs button:hover:not(.chosen) { color: #e5f5f1; border-color: #62dfd03a; }
+  .analyticsMetricGrid.summaryMetrics > article { border-top: 2px solid transparent; }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(1) { border-top-color: var(--violet); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(2) { border-top-color: var(--cyan); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(3) { border-top-color: var(--draw); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(4) { border-top-color: var(--win); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(1) strong { color: var(--violet); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(2) strong { color: var(--cyan); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(3) strong { color: var(--draw); }
+  .analyticsMetricGrid.summaryMetrics > article:nth-child(4) strong { color: var(--win); }
+  .analyticsCard .chartTable summary:hover,
+  .analyticsAdvanced summary:hover,
+  .analyticsDashboard table button:hover { color: var(--cyan); }
+  .distributionLegend button:hover:not(:disabled) { border-color: #62dfd05a; color: var(--cyan); }
+  .shareTrack button:hover { filter: brightness(1.18); }
+  .analyticsLegend button:hover { color: var(--cyan); }
+}
+
