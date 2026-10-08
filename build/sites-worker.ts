@@ -4,10 +4,32 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 export { ClubStore } from "../lib/club-store";
 
+const GITHUB_BACKUP_CRON = "27 2-5 * * *";
+
+async function dispatchMatchCollection(token: string) {
+  const response = await fetch("https://api.github.com/repos/sammkrt/Leo-XI/actions/workflows/update-club-data.yml/dispatches", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      "User-Agent": "leo-xi-cloudflare",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify({ ref: "main" }),
+  });
+  if (response.status !== 204) throw new Error(`GitHub workflow dispatch failed: ${response.status}`);
+}
+
 export default {
-  async scheduled(_controller: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
     const store = env.CLUB_STORE.get(env.CLUB_STORE.idFromName("leo-xi"));
-    ctx.waitUntil(store.fetch("https://club.internal/internal/sync").then(async response => { if (!response.ok) throw new Error("Club sync failed"); await response.arrayBuffer(); }));
+    const tasks: Promise<unknown>[] = [store.fetch("https://club.internal/internal/sync").then(async response => { if (!response.ok) throw new Error("Club sync failed"); await response.arrayBuffer(); })];
+    if (controller.cron === GITHUB_BACKUP_CRON) {
+      if (!env.GITHUB_DISPATCH_TOKEN) console.error("GitHub backup dispatch skipped: secret is missing");
+      else tasks.push(dispatchMatchCollection(env.GITHUB_DISPATCH_TOKEN));
+    }
+    ctx.waitUntil(Promise.all(tasks));
   },
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
     const path = new URL(request.url).pathname;

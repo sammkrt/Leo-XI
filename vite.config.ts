@@ -18,7 +18,7 @@ const localBindingConfig = {
   name: "leo-xi",
   durable_objects: { bindings: [{name: "CLUB_STORE", class_name: "ClubStore"}] },
   migrations: [{tag: "leo-xi-v1", new_sqlite_classes: ["ClubStore"]}],
-  triggers: {crons: ["*/5 * * * *"]},
+  triggers: {crons: ["*/5 * * * *", "27 2-5 * * *"]},
   main: "./build/sites-worker.ts",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
