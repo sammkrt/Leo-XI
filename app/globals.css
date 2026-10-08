@@ -43,3 +43,69 @@ footer{margin-top:40px;border-top-color:var(--line)}
 @media(max-width:520px){
  .sourceBadge{font-size:9px}.siteHeader{height:70px}.brand img{width:42px;height:42px}.brand>span{font-size:16px}.tabs{inset:auto 7px 7px;height:61px}.tabs button{min-width:68px;padding:6px 7px}.tabs button svg{width:16px;height:16px}main{padding:12px 12px 34px}.clubHero{min-height:325px;padding:27px 21px 0;border-radius:20px}.heroCopy{max-width:100%}.heroCopy h1{font-size:38px;letter-spacing:-2px}.heroSubtitle{font-size:12px}.clubMeta{flex-wrap:wrap}.heroLogo{width:210px;height:210px;right:-62px;top:42px;opacity:.28}.heroRecord{gap:25px;margin-top:42px}.heroRecord strong{font-size:24px}.statGrid{grid-template-columns:1fr 1fr;gap:9px}.stat{min-height:132px;padding:18px 16px}.stat strong{font-size:32px}.pageHead h2{font-size:29px}.pageHead .miniTag{display:none}.panel{padding:20px 16px}.modal.playerModal{padding:26px 17px}.playerModal>h2{font-size:34px}.profileStats{grid-template-columns:repeat(2,1fr)}.profileStats>div{padding:14px}.playerMatchSection>h3{font-size:25px}
 }
+
+/* Reading scale and spacing shared by the club pages. */
+:root{--muted:#a9adb8}
+body{font-size:16px;line-height:1.55}
+main{max-width:1680px}
+.tabs button{font-size:14px;min-height:48px}
+.sourceBadge,.updateStamp,.miniTag,.clubMeta,.heroRecord>div>span,.formGroup>span{font-size:12px!important}
+.brand small,.eyebrow,.pageHead .eyebrow,.sectionHead .eyebrow,.heroCopy .eyebrow{font-size:11px;line-height:1.5}
+.pageHead{gap:15px}.pageHead h2{line-height:1.15}
+.stat>span,.stat small,.matchNames strong,.matchNames small,.leader small,.leader>span>span,.award>p:not(.eyebrow):not(.footnote),.awardStats span,.award .footnote{font-size:13px;line-height:1.5}
+.textBtn,.wideLink,.segmented button,.archiveTotals,.archiveStatus>span,.archiveStatus p,.archiveStatus small,.compareSelectors label,.comparisonRow>span,.formLabel,.attendanceActions button,.attendanceGroup h4,.attendancePerson strong,.attendancePerson small,.quiet,.analysisMethod{font-size:13px;line-height:1.55}
+.bodyText,.footnote,.notice,.errorText,.empty,.deepNote,.deepTable small,.deepFormGrid dt,.profileSource,.playerMatchSection .footnote{font-size:13px;line-height:1.7}
+.chartLegend,.awardEmpty small,.comparisonRaw summary span,.deepFormGrid dd small{font-size:12px}
+select,input,textarea,.filterRow select,.filterRow input,.deepFilters select,.analysisSelect select,.formLabel input,.formLabel select,.compareSelectors select{font-size:15px;min-height:44px}
+button{line-height:1.35}
+.matchRow,.leader,.attendancePerson{min-height:56px}
+.tableWrap{overflow-x:auto}
+table th,.comparisonRaw tbody th,.deepTable tbody th{font-size:12px;color:#b5b9c3}
+table td,.playerButton strong,.deepTable td,.comparisonRaw td{font-size:14px}
+table td:first-child,.playerButton small,.deepTable small,.rating{font-size:12px}
+.deepTabs button{font-size:14px;min-height:44px}
+.deepCoverage,.deepFilters label,.distributionToggle{font-size:14px}
+.deepTable td strong{font-size:22px}
+.deepTable th:first-child{width:42%}
+.comparisonRow{grid-template-columns:minmax(0,1fr) 180px minmax(0,1fr);gap:14px}
+.comparisonRow>span{font-size:13px}
+.modal.playerModal{overflow-y:auto}
+footer,footer>div>span{font-size:12px;color:#9a9fa9}
+.detailPage .clubHero{min-height:0;display:flex;align-items:center;padding:18px 28px;box-shadow:none;gap:24px}
+.detailPage .heroCopy{max-width:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.detailPage .heroCopy .eyebrow{margin:0}
+.detailPage .heroCopy h1{font-size:25px;line-height:1.2;letter-spacing:-.6px;margin:0}
+.detailPage .heroCopy h1 br{display:none}
+.detailPage .heroSubtitle,.detailPage .heroRecord,.detailPage .heroLogo{display:none}
+.detailPage .clubMeta{flex-wrap:wrap}
+.detailPage .pageHead{margin-top:26px}
+@media(max-width:780px){
+ body{padding-bottom:88px}
+ .tabs{height:72px}.tabs button{min-width:88px;min-height:54px;font-size:12px;padding:7px 5px;line-height:1.2}
+ main{padding:16px 18px 36px}
+ .panel{padding:22px}
+ .detailPage .clubHero{padding:16px 20px}
+ .detailPage .heroCopy h1{font-size:23px}
+ .detailPage .clubMeta{gap:6px}
+ .detailPage .clubMeta>span{padding:5px 9px}
+ .comparisonRow{grid-template-columns:minmax(0,1fr) 125px minmax(0,1fr);gap:8px}
+ .expandedRow{grid-template-columns:minmax(0,1fr) 125px minmax(0,1fr)}
+}
+@media(max-width:520px){
+ main{padding:12px 14px 34px}
+ .pageHead h2{font-size:28px}
+ .stat{padding:18px}
+ .stat strong{font-size:32px}
+ .stat>span,.stat small{font-size:12px}
+ .panel{padding:20px 16px}
+ .detailPage .clubHero{padding:15px}
+ .detailPage .heroCopy{gap:8px}
+ .detailPage .heroCopy .eyebrow{width:100%}
+ .detailPage .heroCopy h1{font-size:21px}
+ .detailPage .clubMeta>span{font-size:11px!important}
+ .comparisonRow>div{font-size:15px}
+ .compareSelectors{gap:10px}
+ .attendanceLayout{grid-template-columns:1fr}
+ .modal.playerModal{padding:24px 18px}
+ .playerDeepTable th:first-child{width:48%}
+}

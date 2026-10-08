@@ -159,6 +159,7 @@ export function ScatterChart({
   selected?: string;
   previous?: ScatterPoint[];
 }) {
+  const [focusedGroup, setFocusedGroup] = useState<string | null>(null);
   const prior = previous.filter((p) => p.id === selected),
     all = [...points, ...prior];
   if (!points.length)
@@ -300,7 +301,7 @@ export function ScatterChart({
             </g>
           ) : null;
         })}
-        {[...groups].map(([key, group], i) => {
+        {[...groups].map(([key, group]) => {
           const p = group.find((item) => item.id === selected) || group[0],
             label = group.length > 1 ? `${group.length} oyuncu/kayıt` : p.label;
           return (
@@ -310,6 +311,10 @@ export function ScatterChart({
               tabIndex={0}
               role="button"
               aria-label={group.map((p) => p.detail).join("; ")}
+              onMouseEnter={() => setFocusedGroup(key)}
+              onMouseLeave={() => setFocusedGroup(null)}
+              onFocus={() => setFocusedGroup(key)}
+              onBlur={() => setFocusedGroup(null)}
               onClick={() => onSelect(group.map((p) => p.id))}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -330,17 +335,17 @@ export function ScatterChart({
                 />
               )}
               <title>{group.map((p) => p.detail).join("\n")}</title>
-              <text
+              {(p.id === selected || focusedGroup === key) && <text
                 x={Math.min(530, x(p.x) + 10)}
-                y={Math.max(54, y(p.y) - 9 - (i % 2) * 5)}
+                y={Math.max(54, y(p.y) - 12)}
                 fill="#ecedef"
-                fontSize="10"
+                fontSize="13"
                 stroke="#141518"
                 strokeWidth="3"
                 paintOrder="stroke"
               >
                 {label.length > 22 ? label.slice(0, 20) + "…" : label}
-              </text>
+              </text>}
             </g>
           );
         })}
@@ -658,3 +663,4 @@ export function ComparisonBars({
     </div>
   );
 }
+

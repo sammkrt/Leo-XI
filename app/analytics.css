@@ -800,3 +800,92 @@
     box-shadow: none !important;
   }
 }
+
+/* Give dense analysis views room to breathe on screens. */
+@media screen {
+  .analyticsDashboard { margin-top: 20px; }
+  .analyticsIntro { margin: 20px 0 24px; }
+  .analyticsIntro h3 { font-size: clamp(23px, 2.4vw, 32px); line-height: 1.2; }
+  .analyticsIntro p:not(.eyebrow) { font-size: 15px; line-height: 1.6; }
+  .analyticsViewTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    padding: 2px 2px 10px;
+    margin: 20px 0;
+  }
+  .analyticsViewTabs button {
+    flex-shrink: 0;
+    min-height: 46px;
+    font-size: 14px;
+    padding: 11px 16px;
+    white-space: nowrap;
+  }
+  .analyticsFilters label { font-size: 14px; line-height: 1.4; }
+  .analyticsFilters input, .analyticsFilters select, .analyticsDashboard textarea { font-size: 15px; min-height: 44px; }
+  .analyticsFilters small, .analyticsAdvanced summary, .chartTable summary { font-size: 13px; }
+  .analyticsToolbar { gap: 10px; padding: 18px 0; }
+  .analyticsToolbar > span { font-size: 14px; }
+  .analyticsToolbar button, .chartExport button, .sourceLinks button {
+    min-height: 42px;
+    padding: 10px 13px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .analyticsCoverage { font-size: 13px; line-height: 1.7; color: #b9bdc5; }
+  .analyticsTwoCol { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .analyticsCard { padding: 28px; }
+  .analyticsCard .sectionHead { flex-wrap: wrap; gap: 12px; }
+  .analyticsCard .sectionHead .eyebrow { font-size: 11px; max-width: none; }
+  .analyticsCard h3 { font-size: 24px; line-height: 1.25; }
+  .chartExport { margin-left: auto; gap: 8px; }
+  .analyticsSvg { max-width: 980px; max-height: none; margin: 20px auto; }
+  .analyticsLegend { gap: 10px 18px; font-size: 13px; line-height: 1.45; }
+  .analyticsLegend button { font-size: 13px; min-height: 40px; }
+  .analyticsDashboard table th, .analyticsDashboard table td,
+  .professionalMatchReport table th, .professionalMatchReport table td {
+    font-size: 14px;
+    line-height: 1.45;
+    padding: 15px 12px;
+    min-width: 96px;
+  }
+  .analyticsDashboard table small, .professionalMatchReport table small { font-size: 12px; }
+  .analyticsDashboard td button, .professionalMatchReport td button { font-size: 13px; min-height: 38px; }
+  .analyticsMetricGrid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .analyticsMetricGrid span, .analyticsMetricGrid small { font-size: 13px; line-height: 1.5; }
+  .distributionLegend { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 9px; }
+  .distributionLegend button, .distributionLegend strong { font-size: 13px; }
+  .comparisonBarRow > span, .comparisonBarRow > strong,
+  .passingStack, .passingStack strong, .zonePitch span, .zonePitch small { font-size: 13px; }
+  .zonePitch strong { font-size: 20px; }
+  .evidenceGrid p, .evidenceGrid small, .metricDictionary { font-size: 13px; line-height: 1.65; }
+  .contributionShare > div:first-child, .contributionShare > div:first-child span { font-size: 13px; }
+  .shareTrack { height: 42px; }
+  .shareTrack button { font-size: 12px; }
+  .matrixScroll td button { min-width: 58px; min-height: 44px; }
+  .analyticsPlayerDrawer pre, .professionalMatchReport pre { font-size: 12px; }
+}
+@media screen and (max-width: 650px) {
+  .analyticsDashboard { margin-top: 16px; }
+  .analyticsViewTabs { margin: 16px 0; }
+  .analyticsViewTabs button { font-size: 14px; padding: 10px 14px; }
+  .analyticsFilters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .analyticsFilters label { min-width: 0; font-size: 14px; }
+  .analyticsToolbar > span { width: 100%; }
+  .analyticsToolbar button { flex: 1 1 calc(50% - 10px); }
+  .analyticsCard { padding: 19px 14px; }
+  .analyticsCard h3 { font-size: 21px; }
+  .chartExport { width: 100%; margin-left: 0; }
+  .chartExport button { flex: 1; font-size: 12px; }
+  .chartViewport .analyticsSvg { min-width: 620px; }
+  .analyticsMetricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analyticsMetricGrid strong { font-size: 23px; }
+  .analyticsCoverage { font-size: 13px; }
+  .summaryMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .comparisonBarRow { grid-template-columns: 40px minmax(0,1fr) 88px minmax(0,1fr) 40px; gap: 5px; }
+  .comparisonBarRow > span, .comparisonBarRow > strong { font-size: 12px; }
+  .passingStack { grid-template-columns: 82px minmax(0,1fr) 58px; }
+  .zonePitch button { padding: 12px 5px; gap: 8px; }
+  .zonePitch span, .zonePitch small { font-size: 12px; }
+}
+
