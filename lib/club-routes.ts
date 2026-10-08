@@ -5,6 +5,8 @@ export const sectionPaths: Record<string, string> = {
   'Maçlar': '/maclar',
   'Analiz': '/analiz',
   'Kadro': '/kadro',
+  'Takım Laboratuvarı': '/laboratuvar',
+  'Rövanş defteri': '/rovans',
   'Karşılaştır': '/karsilastir',
   'Maç gecesi': '/mac-gecesi',
 };

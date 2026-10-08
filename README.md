@@ -145,3 +145,10 @@ Faul, doğrulanmış olay kodları 2 + 3; sarı kart 95 + 213, kırmızı kart E
 ### Automatic match collection
 
 Cloudflare's existing five-minute cron both imports the published feed and dispatches the GitHub match collector. Amsterdam local slots are every ten minutes from 21:00 through 01:50, plus 02:00 and 07:00. The Durable Object records accepted slots to prevent duplicate dispatches; rejected requests can retry on the second tick of the slot. The Worker requires the existing `GITHUB_DISPATCH_TOKEN` secret with Actions write access to this repository. GitHub runs use `workflow_dispatch`; its separate native schedule is removed. `/api/archive` exposes `collectionSchedule` with the latest dispatch result (no token), separately from `lastMatchUpdate` and `lastSync`. A successful dispatch means GitHub accepted the request, not that EA collection succeeded; verify the Actions run and feed timestamp too.
+### Takım Laboratuvarı ve Rövanş Defteri
+
+- `/laboratuvar`: insan oyuncu olaylarından havuzlanmış oyun profili, medyan altı/üstü sonuç karşılaştırması, geçmiş benzer maçlar ve ileriye dönük takım deneyleri.
+- `/rovans`: kulüp ID ile rakip geçmişi, son iki karşılaşmanın kendi takım metrikleri ve yerel rakip notları.
+- Olay eşlemeleri topluluk araştırmasıdır. Şut kategorileri named/event toplamlarıyla doğrulanır. Karşılaştırmalar ilgili metrikte en az %80 oyuncu kapsamı ister; her iki medyan grubunda 5 maç olmadan öneri üretilmez. Benzerlik nedensellik veya kazanma tahmini değildir.
+- Deneyler ve notlar tarayıcının localStorage alanındadır; paylaşılan takım verisi değildir. JSON dışa aktarımı yedek sağlar.
+- Kendi bilgisayarında bu dalı açıp `pnpm install --frozen-lockfile` ve `pnpm dev` çalıştır. Terminalin verdiği yerel adresin `/laboratuvar` ve `/rovans` yolları değişiklikleri merge gerektirmeden gösterir. Uzak Codex ortamındaki localhost adresi kullanıcının bilgisayarına yönlenmez.
