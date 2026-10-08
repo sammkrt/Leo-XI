@@ -1,5 +1,7 @@
 import {locationFromSearch,routeSearch} from '../lib/club-routes.ts';
 import {weeklyCards} from '../lib/weekly-cards.ts';
+import {buildAwardReport,adjustedRate,adjustedPerMatch,awardPercentile,awardSnapshots,selectHomeAwards,awardRegistry,AWARD_VERSION} from '../lib/derived-awards.ts';
+import {awardCardContent,awardCardSVG,awardCoordinates} from '../lib/award-presentation.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import snapshot from '../data/snapshot.json' with {type:'json'};
@@ -432,55 +434,207 @@ test('unknown routes and malformed match identifiers are rejected',()=>{
 });
 
 
-test('weekly cards count only last seven days, deduplicate matches and include absent roster members',()=>{
- const now=Date.parse('2026-10-08T12:00:00Z');const members=[{name:'a',proName:'A'},{name:'b',proName:'B'},{name:'c',proName:'C'}];
- const make=(id,when,players)=>({...structuredClone(snapshot.matches[0]),matchId:id,timestamp:when/1000,players:{'79638':players}});
- const row=(playername,shots,goals,assists,passattempts,passesmade)=>({playername,shots,goals,assists,passattempts,passesmade});
- const recent=make('123',now-1000,{one:row('a','10','2','3','20','12'),two:row('b','7','1','1','10','8')});
- const old=make('124',now-8*86400000,{two:row('b',100,0,100,100,0)});const future=make('125',now+1000,{two:row('b',100,0,100,100,0)});
- const result=weeklyCards([recent,recent,old,future],members,now);
- assert.equal(result.washing.value,8);assert.deepEqual(result.washing.players,[members[0]]);assert.equal(result.potato.value,8);assert.equal(result.carrying.value,5);assert.equal(result.absent.value,0);assert.deepEqual(result.absent.players,[members[2]]);
-});
-test('weekly cards share titles on ties and never fabricate awards for empty weeks',()=>{
- const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'a',proName:'A'},{name:'b',proName:'B'}];
- const match={...snapshot.matches[0],players:{'79638':{a:{playername:'a',shots:5,goals:1,assists:2,passattempts:10,passesmade:5},b:{playername:'b',shots:5,goals:1,assists:2,passattempts:10,passesmade:5}}}};
- const result=weeklyCards([match],members,now);for(const key of ['washing','potato','absent','carrying'])assert.deepEqual(result[key].players,members);
- assert.deepEqual(weeklyCards([match],members,now+8*86400000),{washing:null,potato:null,absent:null,carrying:null,fouls:null,assassin:null});
- assert.equal(weeklyCards([{...match,players:{}}],members,now).absent,null);
-});
-test('weekly card metrics independently reject missing and contradictory counters',()=>{
- const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'a',proName:'A'},{name:'b',proName:'B'}];
- const match={...snapshot.matches[0],players:{'79638':{a:{playername:'a',shots:'',goals:1,assists:2,passattempts:1,passesmade:9},b:{playername:'b',shots:4,goals:1,assists:null,passattempts:10,passesmade:7}}}};
- const result=weeklyCards([match],members,now);assert.deepEqual(result.washing.players,[members[1]]);assert.deepEqual(result.potato.players,[members[1]]);assert.deepEqual(result.carrying.players,[members[0]]);
- const second={...match,matchId:'123456',players:{'79638':{b:{playername:'b',goals:0,assists:0}}}};
- const incomplete=weeklyCards([match,second],members,now);assert.equal(incomplete.washing,null);assert.equal(incomplete.potato,null);
-});
-test('weekly cards follow stable player IDs across username changes',()=>{
- const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'current',proName:'Current'}];const row=name=>({playername:name,shots:3,goals:1,assists:1,passattempts:10,passesmade:8});
- const latest={...snapshot.matches[0],players:{'79638':{stable:row('current')}}};const older={...latest,matchId:'1234567',timestamp:latest.timestamp-3600,players:{'79638':{stable:row('old-name')}}};
- const result=weeklyCards([older,latest],members,now);assert.equal(result.absent.value,2);assert.equal(result.washing.value,4);assert.equal(result.carrying.value,4);
-});
+const awardNow=Date.parse('2026-10-08T12:00:00Z');
+const awardMembers=['a','b','c','d','e','f'].map(name=>({name,proName:name.toUpperCase()}));
+function awardPlayer(name,changes={}){
+ const p={playername:name,pos:'forward',shots:5,goals:1,assists:1,passattempts:30,passesmade:20,tackleattempts:8,tacklesmade:3,rating:7,redcards:0,...changes};
+ const S=Number(p.shots),G=Number(p.goals),A=Number(p.assists),PC=Number(p.passesmade),PA=Number(p.passattempts);
+ const FC=Math.floor(PC*.6),BC=Math.floor(PC*.3),SC=PC-FC-BC,PF=PA-PC,FF=Math.floor(PF*.6),BF=Math.floor(PF*.3),SF=PF-FF-BF;
+ p.match_event_aggregate_0=`214:${G},11:${A},217:${Math.min(S,Math.max(G,Math.floor(S*.7)))},218:${S-Math.min(S,Math.max(G,Math.floor(S*.7)))},215:${PC},216:${PF},30:${FC},31:${FF},32:${BC},33:${BF},34:${SC},35:${SF},6:${changes.I??3},108:${changes.R??4},2:${changes.F??2},95:${changes.Y??0},213:${changes.delayedY??0},115:${changes.A2??0}`;
+ return p;
+}
+function awardMatches(configs={},count=3){
+ return Array.from({length:count},(_,i)=>({matchId:String(90000+i),timestamp:awardNow/1000-i*3600,clubs:{'79638':{goals:6},opponent:{goals:0}},players:{'79638':Object.fromEntries(awardMembers.map((m,j)=>[m.name,awardPlayer(m.name,{shots:5+j,goals:1,passesmade:20-j,F:2+j,Y:j%2,I:2+j,R:3+j,...(typeof configs[m.name]==='function'?configs[m.name](i):configs[m.name]||{})})]))}}));
+}
+const awardResult=(report,id)=>report.results.find(r=>r.definition.id===id);
+const awardCandidate=(report,id,player)=>awardResult(report,id).candidates.find(c=>c.playerId===player);
 
-
-test('weekly discipline cards pool fouls and cards, preserve zero-card winners and share exact ratio ties',()=>{
- const now=snapshot.matches[0].timestamp*1000+1000;
- const members=['a','b','c','d'].map(name=>({name,proName:name}));
- const row=(name,fouls,yellow,red=0)=>({playername:name,redcards:red,match_event_aggregate_0:`2:${fouls},95:${yellow}`});
- const make=(id,players)=>({...snapshot.matches[0],matchId:id,players:{'79638':players}});
- const matches=[make('1',{a:row('a',2,1),b:row('b',4,1),c:row('c',0,0),d:row('d',2,0)}),make('2',{a:row('a',8,1),b:row('b',6,1),d:row('d',1,0)})];
- const result=weeklyCards(matches,members,now);
- assert.equal(result.fouls.value,10);assert.deepEqual(result.fouls.players,members.slice(0,2));
- assert.equal(result.assassin.value,0);assert.deepEqual(result.assassin.players,[members[3]]);
- const tied=weeklyCards(matches,members.slice(0,3),now);assert.equal(tied.assassin.value,.2);assert.deepEqual(tied.assassin.players,members.slice(0,2));
+test('derived awards reject one-shot perfection and one-foul stealth without relaxing weekly thresholds',()=>{
+ const matches=awardMatches({a:{shots:1,goals:1,F:1,Y:0}},1);
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.ok(r.results.every(r=>r.winners.length===0));
+ assert.equal(awardCandidate(r,'stowaway','a'),undefined);
+ assert.equal(awardCandidate(r,'assassin','a'),undefined);
+ const three=buildAwardReport(awardMatches({a:{shots:0,goals:0,F:0,Y:0}}),awardMembers,{now:awardNow});
+ assert.equal(awardCandidate(three,'stowaway','a'),undefined);assert.equal(awardCandidate(three,'assassin','a'),undefined);
+ assert.doesNotMatch(JSON.stringify(three),/NaN|Infinity/);
 });
-test('weekly discipline ignores incomplete or contradictory events and requires a positive foul denominator',()=>{
- const now=snapshot.matches[0].timestamp*1000+1000, members=[{name:'a',proName:'A'}];
- const make=(id,row)=>({...snapshot.matches[0],matchId:id,players:{'79638':{a:{playername:'a',...row}}}});
- assert.equal(weeklyCards([make('1',{redcards:0,match_event_aggregate_0:'95:1'})],members,now).assassin,null);
- const valid=make('1',{redcards:1,match_event_aggregate_0:'2:2,3:2,95:1,213:1'});
- assert.equal(weeklyCards([valid],members,now).assassin.value,.75);
- for(const broken of [{}, {match_event_aggregate_0:'2:bad'}, {goals:1,match_event_aggregate_0:'2:1'}]){
-  const result=weeklyCards([valid,make('2',broken)],members,now);assert.equal(result.fouls,null);assert.equal(result.assassin,null);
+test('derived awards leave missing/negative/contradictory components outside the common sample',()=>{
+ const matches=awardMatches({},4);
+ matches[0].players['79638'].a.shots='';
+ matches[1].players['79638'].a.goals=100;
+ matches[2].players['79638'].a.passesmade=100;
+ matches[3].players['79638'].a.tacklesmade=100;
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.equal(awardCandidate(r,'washing','a'),undefined);
+ assert.equal(awardCandidate(r,'potato','a').M,3);
+ assert.equal(awardCandidate(r,'toll','a').M,3);
+ assert.ok(awardResult(r,'washing').excluded.some(e=>e.playerId==='a'&&e.reasons.includes('G>S')));
+ assert.ok(awardResult(r,'potato').excluded.some(e=>e.reasons.includes('PC>PA')));
+ assert.ok(awardResult(r,'toll').excluded.some(e=>e.reasons.includes('TW>TA')));
+ const missing=awardMatches({a:{assists:null}},3);missing.forEach(m=>{delete m.players['79638'].a.match_event_aggregate_0;});
+ assert.equal(awardCandidate(buildAwardReport(missing,awardMembers,{now:awardNow}),'carrying','a'),undefined);
+});
+test('derived rates shrink with explicit priors and respond monotonically to success',()=>{
+ assert.equal(adjustedRate(1,1,.2,5),2/6);
+ assert.ok(adjustedRate(4,10,.3,5)>adjustedRate(3,10,.3,5));
+ assert.ok(1-adjustedRate(10-7,10,.5,8)>1-adjustedRate(10-6,10,.5,8));
+ assert.equal(adjustedPerMatch(6,3,1),1.5);
+ const a=buildAwardReport(awardMatches(),awardMembers,{now:awardNow});
+ const b=buildAwardReport(awardMatches({a:{goals:2}}),awardMembers,{now:awardNow});
+ assert.ok(awardCandidate(b,'stowaway','a').components[1].adjusted>awardCandidate(a,'stowaway','a').components[1].adjusted);
+});
+test('high-volume accurate passing does not win Potato solely on raw error totals',()=>{
+ const r=buildAwardReport(awardMatches({a:{passattempts:1000,passesmade:970},b:{passattempts:100,passesmade:70},c:{passattempts:100,passesmade:75},d:{passattempts:100,passesmade:80},e:{passattempts:100,passesmade:85},f:{passattempts:100,passesmade:90}}),awardMembers,{now:awardNow});
+ const result=awardResult(r,'potato');assert.ok(result.winners.length);assert.ok(!result.winners.some(c=>c.playerId==='a'));
+ assert.ok(result.candidates.find(c=>c.playerId==='a').components[0].raw<.05);
+});
+test('teammate shares recompute on the same complete common matches, never different component totals',()=>{
+ const matches=awardMatches({},4);delete matches[0].players['79638'].b.assists;delete matches[1].players['79638'].a.shots;
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ const carry=awardCandidate(r,'carrying','a');assert.equal(carry.M,3);assert.ok(!carry.matchIds.includes('90000'));
+ assert.equal(carry.components[1].raw,carry.totals.output/carry.totals.teamOutput);
+ assert.equal(carry.components[1].numerator,carry.totals.output);assert.equal(carry.components[1].denominator,carry.totals.teamOutput);
+ const stowaway=awardCandidate(r,'stowaway','a');assert.equal(stowaway.M,3);assert.ok(!stowaway.matchIds.includes('90001'));
+ assert.equal(stowaway.components[0].raw,(stowaway.totals.G/stowaway.totals.teamG)/(stowaway.totals.S/stowaway.totals.teamS));
+});
+test('zero team contribution never creates a share or infinity',()=>{
+ const matches=awardMatches(Object.fromEntries(awardMembers.map(m=>[m.name,{goals:0,assists:0,shots:0,F:0}])),3);
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.equal(awardResult(r,'carrying').candidates.length,0);assert.equal(awardResult(r,'stowaway').candidates.length,0);assert.equal(awardResult(r,'assassin').candidates.length,0);
+ assert.ok(r.results.every(r=>r.candidates.every(c=>c.components.every(x=>Number.isFinite(x.adjusted)))));
+});
+test('stable IDs survive renamed players; rolling periods exclude old/future duplicates',()=>{
+ const matches=awardMatches({},4);matches.slice(1).forEach(m=>{m.players['79638'].a.playername='old-a';});
+ const old={...matches[0],matchId:'old',timestamp:awardNow/1000-8*86400};const future={...matches[0],matchId:'future',timestamp:awardNow/1000+10};
+ const r=weeklyCards([...matches,matches[0],old,future],awardMembers,awardNow);
+ assert.equal(r.matchIds.length,4);const c=awardCandidate(r,'washing','a');assert.equal(c.name,'a');assert.equal(c.playerId,'a');assert.equal(c.M,4);
+});
+test('role baselines leave self out, require three peers and weight mixed roles by attempts',()=>{
+ const configs=Object.fromEntries(awardMembers.map((m,j)=>[m.name,i=>({pos:i===0?'midfielder':'forward',passattempts:j===0&&i===0?100:30,passesmade:j===0&&i===0?90:20-j})]));
+ const r=buildAwardReport(awardMatches(configs),awardMembers,{now:awardNow});const c=awardCandidate(r,'potato','a');
+ const ref=c.components[0].references;assert.equal(ref.length,2);assert.ok(ref.every(b=>b.scope==='same-role'&&b.peers===5));
+ assert.equal(ref.find(b=>b.role==='midfielder').weight,100/160);
+ const expected=awardMembers.slice(1).reduce((n,m,j)=>n+(30-(19-j)),0)/(5*30);
+ assert.equal(ref.find(b=>b.role==='midfielder').value,expected);
+ const fallback=awardMatches({a:{pos:'defender'},b:{pos:'midfielder'},c:{pos:'goalkeeper'}});
+ assert.ok(awardCandidate(buildAwardReport(fallback,awardMembers,{now:awardNow}),'potato','a').components[0].references.every(b=>b.scope==='team'));
+ const noPeer=awardMatches();noPeer.forEach(m=>{m.players['79638']={a:m.players['79638'].a};});
+ assert.equal(awardResult(buildAwardReport(noPeer,awardMembers,{now:awardNow}),'washing').candidates.length,0);
+});
+test('equal values, near equality, small groups and null components cannot manufacture winners',()=>{
+ const config=Object.fromEntries(awardMembers.map(m=>[m.name,{shots:5,passesmade:20,F:2,Y:0,I:3,R:4}]));
+ const allEqual=buildAwardReport(awardMatches(config),awardMembers,{now:awardNow});assert.ok(allEqual.results.every(r=>!r.winners.length));
+ assert.equal(awardPercentile(2,[1,2,2,3]),.5);
+ const small=awardMatches();small.forEach(m=>{delete m.players['79638'].d;delete m.players['79638'].e;delete m.players['79638'].f;});
+ const r=buildAwardReport(small,awardMembers,{now:awardNow});assert.ok(r.results.every(r=>!r.winners.length&&r.candidates.every(c=>c.index===null)));
+ const near=awardMatches(Object.fromEntries(awardMembers.map(m=>[m.name,{passattempts:100000,passesmade:m.name==='a'?80000:80001}])));
+ assert.equal(awardResult(buildAwardReport(near,awardMembers,{now:awardNow}),'potato').winners.length,0);
+ const broken=awardMatches();broken.forEach(m=>{delete m.players['79638'].a.passesmade;});assert.equal(awardCandidate(buildAwardReport(broken,awardMembers,{now:awardNow}),'potato','a'),undefined);
+});
+test('everyone zero-card leaves Assassin vacant; delayed yellow is distinct from second yellow',()=>{
+ const allZero=awardMatches(Object.fromEntries(awardMembers.map(m=>[m.name,{Y:0,delayedY:0}])));
+ assert.equal(awardResult(buildAwardReport(allZero,awardMembers,{now:awardNow}),'assassin').winners.length,0);
+ const r=buildAwardReport(awardMatches({a:{Y:1,delayedY:1,redcards:1}}),awardMembers,{now:awardNow});
+ const c=awardCandidate(r,'fouls','a');assert.equal(c.totals.Y,6);assert.equal(c.totals.RC,3);assert.equal(c.totals.discipline,15);
+ assert.equal(awardCandidate(r,'assassin','a'),undefined);
+});
+test('missing card/A2 data uses labeled versions rather than silent zero substitution',()=>{
+ const noCards=awardMatches();noCards.forEach(m=>Object.values(m.players['79638']).forEach(p=>{delete p.redcards;}));
+ const r=buildAwardReport(noCards,awardMembers,{now:awardNow});assert.equal(awardResult(r,'fouls').definition.variant,'fouls-only-v1');assert.equal(awardResult(r,'assassin').candidates.length,0);
+ const noEvents=awardMatches();noEvents.forEach(m=>Object.values(m.players['79638']).forEach(p=>{delete p.match_event_aggregate_0;}));
+ const r2=buildAwardReport(noEvents,awardMembers,{now:awardNow});assert.equal(awardResult(r2,'locksmith').definition.variant,'assists-only-v1');assert.ok(awardResult(r2,'locksmith').candidates.length);
+ assert.ok(!Object.hasOwn(awardCandidate(r2,'locksmith','a').totals,'A2'));
+});
+test('event directions reject impossible partitions and retain a separate source scope',()=>{
+ const matches=awardMatches({},4);matches[0].players['79638'].a.match_event_aggregate_0+=',30:100';
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});assert.equal(awardCandidate(r,'forward','a').M,3);assert.equal(awardCandidate(r,'potato','a').M,4);
+ assert.ok(awardResult(r,'forward').excluded.some(e=>e.reasons.some(r=>r.includes('Yön alt toplamı'))));
+});
+test('Crypto uses own-centered residual variation with at least three teammates per match',()=>{
+ const matches=awardMatches({a:i=>({rating:[5,9,6,10,4][i]})},5);
+ const c=awardCandidate(buildAwardReport(matches,awardMembers,{now:awardNow}),'crypto','a');assert.equal(c.M,5);assert.ok(c.components[0].raw>2);
+ const few=structuredClone(matches);few.forEach(m=>{for(const id of ['d','e','f'])delete m.players['79638'][id];});assert.equal(awardResult(buildAwardReport(few,awardMembers,{now:awardNow}),'crypto').candidates.length,0);
+});
+test('Quiet considers only low output peers with complete utility observations',()=>{
+ const matches=awardMatches(Object.fromEntries(awardMembers.map(m=>[m.name,{goals:0,assists:0}])));
+ const result=awardResult(buildAwardReport(matches,awardMembers,{now:awardNow}),'quiet');assert.equal(result.candidates.length,6);assert.ok(result.winners.length);
+ matches.forEach(m=>{m.players['79638'].a=awardPlayer('a',{goals:2});});
+ assert.equal(awardCandidate(buildAwardReport(matches,awardMembers,{now:awardNow}),'quiet','a'),undefined);
+});
+test('Casper only states current verified roster absence, requires three matches and has no index',()=>{
+ const members=[...awardMembers,{name:'ghost',proName:'Ghost'}],options={now:awardNow,allowCasper:true,rosterAsOf:new Date(awardNow-1000).toISOString()};
+ const r=buildAwardReport(awardMatches(),members,options);assert.deepEqual(r.casper.map(c=>c.member.name),['ghost']);assert.ok(!Object.hasOwn(r.casper[0],'index'));
+ assert.equal(buildAwardReport(awardMatches({},2),members,options).casper.length,0);
+ assert.equal(buildAwardReport(awardMatches(),members,{...options,rosterAsOf:'2025-01-01'}).casper.length,0);
+ assert.equal(buildAwardReport(awardMatches(),members,{now:awardNow}).casper.length,0);
+});
+test('card, detail values, chart and PNG use the same immutable computation result',()=>{
+ const r=buildAwardReport(awardMatches(),awardMembers,{now:awardNow,period:'Son 7 gün',asOf:new Date(awardNow).toISOString()});
+ for(const result of r.results)for(const c of result.winners){
+  const before=JSON.stringify(c),content=awardCardContent(result,c,r),svg=awardCardSVG(result,c,r);
+  assert.ok(svg.includes(content.title.replace('&','&amp;')));assert.ok(svg.includes(content.player));assert.ok(svg.includes(content.evidence[0]));assert.ok(svg.includes('Unvan endeksi'));assert.equal(before,JSON.stringify(c));
+  const coords=awardCoordinates(result,c);if(coords)assert.ok(Number.isFinite(coords.x)&&Number.isFinite(coords.y));
  }
- const missingRed=weeklyCards([make('1',{match_event_aggregate_0:'2:3'})],members,now);assert.equal(missingRed.fouls.value,3);assert.equal(missingRed.assassin,null);
+ assert.ok(selectHomeAwards(r).length<=6);assert.equal(new Set(selectHomeAwards(r).map(r=>r.definition.category)).size,selectHomeAwards(r).length);
+ assert.equal(new Set(awardRegistry.map(r=>r.id)).size,14);
+});
+test('weekly archive keeps deterministic results, durable versions and late-data revisions',async()=>{
+ const matches=awardMatches({},5),asOf=new Date(awardNow).toISOString();
+ const first=await awardSnapshots(matches,awardMembers,[],asOf,awardNow);assert.equal(first.length,1);assert.equal(first[0].revision,1);assert.equal(first[0].version,AWARD_VERSION);assert.equal(first[0].report.provisional,true);
+ const same=await awardSnapshots([...matches].reverse(),awardMembers,first,new Date(awardNow+1000).toISOString(),awardNow);assert.equal(same[0].revision,1);assert.deepEqual(same[0].report,first[0].report);
+ const complete=await awardSnapshots(matches,awardMembers,same,asOf,awardNow+7*86400000);assert.equal(complete[0].report.provisional,false);assert.equal(complete[0].revision,1);
+ const late={...structuredClone(matches[0]),matchId:'late',timestamp:matches.at(-1).timestamp-1000};
+ const revised=await awardSnapshots([...matches,late],awardMembers,complete,new Date(awardNow+7*86400000).toISOString(),awardNow+7*86400000);assert.equal(revised[0].revision,2);assert.equal(revised[0].previous.length,1);assert.deepEqual(revised[0].previous[0].report,complete[0].report);
+});
+test('award snapshots survive Durable Object restart and failed feeds alongside attendance/archive',async()=>{
+ const previousFetch=globalThis.fetch;try{
+  const s=state(),store=new ClubStore(s);await store.ready;
+  const before=(await json(store,'/api/archive')).data;assert.ok(before.awards.length);assert.equal(before.matches.length,10);
+  const restarted=new ClubStore(s);await restarted.ready;assert.deepEqual((await json(restarted,'/api/archive')).data.awards,before.awards);
+  globalThis.fetch=async()=>{throw Error('Unavailable')};await restarted.sync();assert.deepEqual((await json(restarted,'/api/archive')).data.awards,before.awards);
+ }finally{globalThis.fetch=previousFetch;}
+});
+test('title routes and rolling seven days integrate with existing filter URLs',()=>{
+ const search=routeSearch('/analiz/unvanlar','scope=last7');const f=filtersFromSearch(search);assert.equal(f.view,'titles');assert.equal(f.scope,'last7');assert.equal(locationFromSearch(search),'/analiz/unvanlar?scope=last7');
+ const now=Date.now(),matches=awardMatches().map((m,i)=>({...m,timestamp:now/1000-i*4*86400}));assert.equal(filterMatches(matches,{...defaultFilters,scope:'last7'}).length,2);
+});
+test('durable award histories round-trip through bounded storage chunks',async()=>{
+ class BoundedStorage extends MemoryStorage{async put(key,value){if(typeof key==='string')assert.ok(Buffer.byteLength(JSON.stringify(value))<128*1024,key);return super.put(key,value);}}
+ const storage=new BoundedStorage(),s={storage,blockConcurrencyWhile:fn=>fn()},store=new ClubStore(s);await store.ready;
+ assert.ok([...storage.values.keys()].filter(k=>k.startsWith('award-chunk:')).length>1);
+ const before=(await json(store,'/api/archive')).data.awards;
+ assert.ok(before[0].report.results.length===14);
+ const restart=new ClubStore(s);assert.deepEqual((await json(restart,'/api/archive')).data.awards,before);
+});
+test('award persistence failures roll back new match writes and preserve existing snapshots',async()=>{
+ class AtomicStorage extends MemoryStorage{
+  fail=false;
+  async put(key,value){if(this.fail&&typeof key==='string'&&key.startsWith('award-chunk:'))throw Error('Disk full');return super.put(key,value);}
+  async transaction(fn){const before=structuredClone(this.values);try{return await fn(this);}catch(error){this.values=before;throw error;}}
+ }
+ const previousFetch=globalThis.fetch;try{
+  const storage=new AtomicStorage(),s={storage,blockConcurrencyWhile:fn=>fn()},store=new ClubStore(s);await store.ready;
+  const before=(await json(store,'/api/archive')).data;
+  const extra={...structuredClone(snapshot.matches[0]),matchId:'99887766'};
+  globalThis.fetch=mockEA([extra]);storage.fail=true;
+  const failure=await store.sync();assert.equal(failure.syncFailure.code,'STORAGE_WRITE_FAILED');
+  const after=(await json(store,'/api/archive')).data;assert.equal(after.matches.length,before.matches.length);assert.deepEqual(after.awards,before.awards);assert.equal(after.lastMatchUpdate,before.lastMatchUpdate);
+ }finally{globalThis.fetch=previousFetch;}
+});
+test('genuine tied leaders share an award without replacing winners for homepage variety',()=>{
+ const matches=awardMatches({a:{shots:12,goals:1},b:{shots:12,goals:1},c:{shots:6,goals:1},d:{shots:7,goals:1},e:{shots:8,goals:1},f:{shots:9,goals:1}});
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});const washing=awardResult(r,'washing');assert.deepEqual(washing.winners.map(c=>c.playerId),['a','b']);assert.ok(selectHomeAwards(r).find(r=>r.definition.id==='washing').winners.length===2);
+});
+test('unavailable award migration cannot block existing match and attendance APIs',async()=>{
+ class FailingAwardStorage extends MemoryStorage{async put(key,value){if(typeof key==='string'&&key.startsWith('award-chunk:'))throw Error('Award write unavailable');return super.put(key,value);}}
+ const storage=new FailingAwardStorage();await storage.put({seeded:true,latest:{...snapshot,matches:[]},recentMatchIds:snapshot.matches.map(m=>m.matchId)});for(const match of snapshot.matches)await storage.put('match:'+match.matchId,match);
+ const store=new ClubStore({storage,blockConcurrencyWhile:fn=>fn()});await store.ready;
+ const archive=await json(store,'/api/archive');assert.equal(archive.status,200);assert.equal(archive.data.matches.length,10);assert.ok(archive.data.awardNotice);
+ assert.equal((await json(store,'/api/club')).status,200);assert.equal((await json(store,'/api/attendance?date=2026-10-08')).status,200);
+});
+test('rolling previous seven days use the preceding time window rather than the last N matches',()=>{
+ const now=Date.now(),matches=awardMatches({},5).map((m,i)=>({...m,timestamp:now/1000-[1,2,8,12,15][i]*86400}));
+ const filters={...defaultFilters,scope:'last7'},selected=filterMatches(matches,filters);
+ assert.deepEqual(previousMatches(matches,selected,filters).map(m=>m.matchId),['90002','90003']);
 });

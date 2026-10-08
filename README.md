@@ -41,6 +41,14 @@ Yalnız varsayılandan farklı filtreler sorgu parametresi olarak tutulur; örne
 
 ## Cloudflare Workers ile yayınlama
 
+`.github/workflows/deploy-worker.yml` PR'larda lint, test, TypeScript ve Worker build kontrollerini çalıştırır. `main`e merge/push sonrası aynı doğrulanmış build'i `leo-xi` Worker'ına yayımlar ve unvanlar rotası ile kalıcı arşiv/kadro/katılım API'lerini kontrol eder. GitHub Pages deployment'ı bu Worker'ın yayınlandığını göstermez.
+
+Bu akış için repo veya `cloudflare-production` environment secret deposunda `CLOUDFLARE_API_TOKEN` ve `CLOUDFLARE_ACCOUNT_ID` gerekir. Hesap sahibi, mevcut `leo-xi` Worker'ını yayımlamaya yetkili Cloudflare token'ını yalnız GitHub Secrets'a kaydetmelidir; değerleri kaynak dosyasına veya loglara yazmayın. Secret yoksa workflow deployment öncesinde açık hata ile durur. GitHub environment reviewer kuralları varsa korunur.
+
+Mevcut Cloudflare Workers Git build entegrasyonu ayrıca aktifse aynı commit'i iki farklı sistemle deploy etmeyin: hesap sahibi mevcut bağlantıyı doğrulayıp tek üretim yayın yolunu seçmelidir. Bu checkout'ta Cloudflare hesap erişimi olmadan panel bağlantısının etkinliği doğrulanamaz.
+
+Başarılı yayın için hem `Cloudflare production` işi hem gerçek canlı sitede unvanlar, gezinme ve ilgili işlevlerin tarayıcı kontrolü başarılı olmalıdır. Yetkili hesap secret'ları ekledikten sonra başarısız main deployment'ını yeniden çalıştırabilir veya `workflow_dispatch` ile **main** dalında başlatabilir. Worker/namespace/migration silinmez; mevcut Worker secret'ları değiştirilmez.
+
 Cloudflare Workers & Pages bölümünde GitHub reposu `sammkrt/Leo-XI`, üretim dalı `main` seçilir.
 
 | Alan | Değer |
