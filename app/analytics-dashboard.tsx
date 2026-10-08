@@ -407,10 +407,10 @@ export default function AnalyticsDashboard({
   const matchTypes = [...new Set(matches.map((m) => matchInfo(m).type))];
   return (
     <div className="analyticsDashboard">
-      <div className="analyticsIntro">
+      <details className="analyticsIntro analyticsGuide"><summary>Analizi nasıl kullanırım?</summary><div>
         <div>
           <p className="eyebrow">LEO XI · PERFORMANS LABORATUVARI</p>
-          <h3>Bir panel, bir futbol sorusu.</h3>
+          <h3>Takımını daha yakından tanı.</h3>
           <p>
             Maçları birlikte oku. Her sayının kapsamını gör, kaydına ulaş,
             sonraki denemeyi ölç.
@@ -419,7 +419,7 @@ export default function AnalyticsDashboard({
         <span className="miniTag">
           {matches.length} erişilebilir arşiv kaydı
         </span>
-      </div>
+      </div></details>
       <div
         className="analyticsViewTabs noPrint"
         role="tablist"
@@ -723,7 +723,7 @@ export default function AnalyticsDashboard({
           disabled={!matches.length}
           onClick={() => exportData("all-raw")}
         >
-          Raw Data Export · tüm arşiv
+          Tüm arşivi indir
         </button>
         <button
           disabled={!pool.length}

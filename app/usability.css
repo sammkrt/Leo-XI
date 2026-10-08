@@ -1,0 +1,93 @@
+/* Shared layout for the clubhouse, reports and player tools. */
+:root{--bg:#0c1015;--panel:#151b23;--line:#ffffff12;--text:#f1f3f6;--muted:#a4afbe;--gold:#e6c586;--green:#8ac8a3}
+body{background:radial-gradient(ellipse at 75% 0,#c69b3c09,transparent 45%),var(--bg);font-size:15px}
+main,.siteHeader{max-width:1280px}
+.siteHeader{height:84px;border-bottom:1px solid var(--line)}
+.brand small{color:var(--muted);letter-spacing:2px}
+main{padding:24px 28px 40px;outline:none}
+.skipLink{position:fixed;top:8px;left:16px;z-index:50;background:var(--gold);color:#151b23;padding:12px 20px;border-radius:10px;transform:translateY(-150%)}
+.skipLink:focus{transform:none}
+.clubHero{min-height:0;padding:32px 36px 0;margin-bottom:24px;background:linear-gradient(115deg,#212a34,#161c23 65%);border:1px solid #e6c58625;border-radius:24px;box-shadow:none}
+.heroCopy{max-width:75%}
+.heroCopy h1{font-size:clamp(30px,3.6vw,48px);letter-spacing:-1.6px;line-height:1.15}
+.heroSubtitle{font-size:15px;line-height:1.7;max-width:440px;color:var(--muted)}
+.heroLogo{width:180px;height:180px;right:6%;top:24px;opacity:.95}
+.clubMeta{gap:16px;color:var(--muted)}
+.heroRecord{margin-top:24px;padding:20px 0;gap:32px}
+.heroRecord strong{font-size:26px}
+.tabs{position:sticky;top:12px;bottom:auto;left:auto;transform:none;z-index:5;display:flex;justify-content:stretch;width:100%;max-width:100%;height:auto;margin:0 0 28px;padding:6px;border-radius:16px;background:#151b23f5;border:1px solid var(--line);box-shadow:0 8px 24px #0003;backdrop-filter:blur(16px)}
+.tabs button{flex:1;justify-content:center;flex-direction:row;gap:8px;font-size:13px;padding:12px 8px;min-width:0;min-height:48px;border-radius:10px;color:var(--muted)}
+.tabs button.active{background:var(--gold);color:#171a20;font-weight:650}
+.tabs button:hover:not(.active){background:#ffffff09;color:var(--text)}
+.quickActions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 32px}
+.quickActions button{display:flex;align-items:center;gap:16px;padding:20px;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.quickActions button>svg:first-child{color:var(--gold);flex-shrink:0}
+.quickActions button>svg:last-child{margin-left:auto;color:var(--muted)}
+.quickActions strong,.quickActions small{display:block}
+.quickActions strong{font-size:15px;font-weight:600}
+.quickActions small{font-size:13px;color:var(--muted);margin-top:5px}
+.quickActions button:hover{border-color:#e6c58665;background:#1c2430}
+.pageHead{margin:30px 0 20px}.pageHead h2{font-size:28px;letter-spacing:-.7px}.pageHead .eyebrow{display:none}
+.panel,.stat{border:1px solid var(--line);border-radius:18px;box-shadow:none;background:var(--panel)}
+.panel{padding:24px}.stat{padding:22px}.stat strong{font-size:34px}
+.stat small,.matchNames small,.playerButton small,.leader>span>span,.quiet{color:var(--muted)}
+.sectionHead .eyebrow{color:var(--muted);letter-spacing:1px;font-size:10px}
+.matchNames{min-width:0}.matchNames strong{display:block;overflow-wrap:anywhere;font-size:14px}.matchNames small{font-size:12px}
+.matchRow{gap:14px;padding:18px 4px}.matchRow:hover{background:#ffffff06;border-radius:8px}
+.result{width:34px;height:34px;font-size:12px}.score{font-size:23px}.formBadge{width:27px;height:27px;font-size:11px}
+select,input,textarea{font-size:16px!important;min-height:46px;background:#1c2530;border-color:#ffffff20;color:var(--text)}
+.search:focus-within{outline:2px solid var(--gold);outline-offset:3px}.search input:focus-visible{outline:0}
+.segmented{background:#0c1015;border-color:var(--line);flex-wrap:wrap}.segmented button{min-height:40px;font-size:13px;color:var(--muted)}
+.segmented button.chosen{background:#e6c58620;color:var(--gold)}
+.textBtn,.primaryButton,.wideLink{min-height:44px;font-size:13px}.textBtn{padding:8px 0}
+.footnote,.bodyText{color:var(--muted);font-size:13px;line-height:1.75}
+.chartLegend span:first-child{color:var(--gold)}.chartLegend span:first-child i{border-color:var(--gold)}
+.archiveStatus summary,details.analyticsAdvanced>summary,.comparisonRaw summary{padding:12px 0;color:var(--gold);font-size:14px;cursor:pointer;min-height:44px}
+.archiveStatus>span{display:block;margin-top:12px}
+.analyticsGuide{display:block;margin:0 0 18px;padding:0 18px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.analyticsGuide summary{padding:14px 0;color:var(--muted);font-size:14px;cursor:pointer}
+.analyticsGuide h3{font-size:20px}.analyticsGuide>div{padding-bottom:18px}
+.analyticsDashboard{margin-top:0}.analyticsViewTabs{margin:0 0 20px}.analyticsViewTabs button{min-height:44px}
+.analyticsFilterPanel{background:#131a22}.analyticsToolbar{padding-top:0;gap:10px}.analyticsToolbar button{min-height:44px;font-size:13px}
+.comparisonGroup h3{font-size:19px}.compareCards{margin:24px 0}.compareIdentity p{font-size:13px}
+.attendanceActions button{min-height:76px;font-size:14px}.attendanceActions button:not(:disabled):hover{border-color:var(--gold)}
+.notice{margin:0 0 20px;font-size:13px}.comparePanel .notice{margin-top:20px}
+.modal{background:var(--panel);border-radius:20px}.close{width:44px;height:44px;z-index:2;background:#222d3b;color:var(--text)}
+.mobileTableHint{display:none}
+footer{margin-top:36px;font-size:12px;align-items:flex-start}
+@media(max-width:780px){
+ body{padding-bottom:0}main{padding:18px 16px 32px}.siteHeader{height:76px;padding:0 18px}
+ .headerRight .sourceBadge{display:none}.updateStamp{font-size:11px!important}
+ .tabs{top:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible;margin-bottom:24px;border-radius:14px}
+ .tabs button{min-width:0;font-size:12px;min-height:44px;padding:10px 4px;gap:6px}.tabs svg{width:16px;height:16px}
+ .clubHero{padding:24px 22px 0}.heroCopy{max-width:80%}.heroLogo{width:110px;height:110px;right:16px;top:32px;opacity:.4}
+ .heroSubtitle{font-size:14px;max-width:75%}.heroRecord{gap:24px}.heroRecord .formGroup{width:100%;margin-left:0}
+ .quickActions{gap:12px}.quickActions button{padding:16px;gap:10px}.quickActions strong{font-size:14px}.quickActions small{font-size:12px}
+ .panel{padding:20px}.pageHead h2{font-size:26px}.overviewGrid{grid-template-columns:1fr}
+ .mobileTableHint{display:block;font-size:12px;color:var(--muted);margin-top:14px}.tableWrap{border-radius:8px}
+ .compareSelectors select{width:100%}.analyticsFilters label{min-width:130px}
+}
+@media(max-width:480px){
+ .clubHero{padding:22px 18px 0}.heroCopy{max-width:100%}.heroCopy h1{font-size:30px;letter-spacing:-1px}.heroLogo{display:none}.heroSubtitle{max-width:100%}
+ .quickActions{grid-template-columns:1fr;margin-bottom:24px}.quickActions button{padding:16px}.quickActions small{font-size:13px}
+ .heroRecord{gap:24px}.heroRecord strong{font-size:24px}.heroRecord>div>span{font-size:11px!important}
+ .clubMeta{gap:12px}.statGrid{gap:12px}.stat{padding:18px}.stat strong{font-size:32px}
+ .sectionHead{flex-wrap:wrap;gap:8px}.matchNames strong{font-size:13px}.score{font-size:21px}.matchRow{gap:9px}
+ .filterRow>select,.filterRow>.segmented{width:100%}.filterRow .segmented button{flex:1;padding:9px 6px;font-size:12px}
+ .compareSelectors{grid-template-columns:1fr;gap:16px}.comparisonRow,.expandedRow{grid-template-columns:minmax(0,1fr) 112px minmax(0,1fr);gap:8px}
+ .modalBackdrop{padding:10px}.modal{padding:28px 18px;max-height:calc(100dvh - 20px)}
+}
+@media print{.quickActions,.skipLink,.tabs{display:none}.analyticsGuide{display:none}body,main{padding:0}}
+/* Reset the previous sidebar layout to a single shared content column. */
+.siteHeader{position:relative;inset:auto;width:100%;height:84px;margin:0 auto;padding:0 28px;flex-direction:row;align-items:center;justify-content:space-between;background:transparent;border:0;border-bottom:1px solid var(--line);box-shadow:none;backdrop-filter:none}
+.brand{padding:0;border:0}.headerRight{margin:0;padding:0;display:flex;background:none;border:0;gap:24px}.updateStamp{display:block}
+main{margin:0 auto;width:100%}.tabs{inset:auto;top:12px;flex-direction:row}.tabs button{width:auto;box-shadow:none!important}.tabs button:hover{transform:none}
+.heroRecord .formGroup{display:grid}.heroRecord{background:none}.heroRecord .formGroup>div{flex-wrap:wrap}
+.statGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.heroCopy .heroSubtitle{font-size:15px}
+@media(max-width:780px){.siteHeader{height:76px;padding:0 18px}.headerRight{gap:12px}.tabs{inset:auto;top:8px}.tabs button{flex-direction:row}.statGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.heroCopy .heroSubtitle{font-size:14px}}
+@media(max-width:480px){.updateStamp{display:none}.heroRecord .formGroup{display:grid;width:100%}.heroRecord{margin-top:24px}}
+.clubHero{grid-template-columns:minmax(0,1fr)}
+.heroCopy{max-width:calc(100% - 220px)}
+.heroCopy .heroSubtitle{max-width:540px}
+@media(max-width:780px){.heroCopy{max-width:calc(100% - 110px)}}
+@media(max-width:480px){.heroCopy{max-width:100%}.heroCopy h1{font-size:29px}.heroCopy .heroSubtitle{max-width:100%}.clubMeta{flex-direction:row;flex-wrap:wrap}.formGroup>div{gap:5px}.formBadge{width:23px;height:23px}}
