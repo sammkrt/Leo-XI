@@ -140,3 +140,11 @@ Analiz sekmesi kayıtlı maçları takım, oyuncu, maç, seans ve gelişim gör�
 Ana sayfadaki altı küçük kart (masaüstünde satır başına dört kart) son 7 günlük kayıtlı maçlardan hesaplanır: Çamaşır Makinesi (şut − gol), Patates (denenen − başarılı pas), En Gayi (güncel kadroda en az kayıtlı maç) Eşek Yükü (gol + asist), Davar (en çok faul) ve Suikastçı (en düşük toplam kart / faul oranı). Eşitlikte tüm oyuncular gösterilir. Kadro üyesinin hiç görünmemesi 0 kayıtlı maç sayılır; hiç oyuncu kaydı olmayan haftada unvan verilmez. Eksik veya tutarsız sayaçlar sıfır kabul edilmez; bir oyuncunun ilgili metriği tüm haftalık görünümlerinde geçerli değilse o metrik için unvan adayı yapılmaz. Golsüz şut, kaçan net fırsat anlamına gelmez. Eski büyük Haftanın Oyuncusu kartı kaldırılmıştır.
 
 Faul, doğrulanmış olay kodları 2 + 3; sarı kart 95 + 213, kırmızı kart EA `redcards` alanından alınır. Suikastçı için haftalık toplam (sarı + kırmızı) / faul kullanılır; sıfır faulü olanlar aday değildir, kartlar ağırlıklandırılmaz. Olay verisi eksik veya gol/asist/şut sayaçlarıyla tutarsızsa ilgili görünüm kullanılmaz. Doğrudan kırmızı ayrımı, hava topu denemeleri, yarı sahaya göre pas hatası ve ceza sahasına göre top kaybı doğrulanamadığından Kasap, Defans Siken, Hücum Siken, Narin Kelebeği, El Bombası ve Şaban kartları eklenmemiştir.
+
+### Takım Laboratuvarı ve Rövanş Defteri
+
+- `/laboratuvar`: insan oyuncu olaylarından havuzlanmış oyun profili, medyan altı/üstü sonuç karşılaştırması, geçmiş benzer maçlar ve ileriye dönük takım deneyleri.
+- `/rovans`: kulüp ID ile rakip geçmişi, son iki karşılaşmanın kendi takım metrikleri ve yerel rakip notları.
+- Olay eşlemeleri topluluk araştırmasıdır. Şut kategorileri named/event toplamlarıyla doğrulanır. Karşılaştırmalar ilgili metrikte en az %80 oyuncu kapsamı ister; her iki medyan grubunda 5 maç olmadan öneri üretilmez. Benzerlik nedensellik veya kazanma tahmini değildir.
+- Deneyler ve notlar tarayıcının localStorage alanındadır; paylaşılan takım verisi değildir. JSON dışa aktarımı yedek sağlar.
+- Kendi bilgisayarında bu dalı açıp `pnpm install --frozen-lockfile` ve `pnpm dev` çalıştır. Terminalin verdiği yerel adresin `/laboratuvar` ve `/rovans` yolları değişiklikleri merge gerektirmeden gösterir. Uzak Codex ortamındaki localhost adresi kullanıcının bilgisayarına yönlenmez.

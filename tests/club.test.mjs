@@ -638,3 +638,41 @@ test('rolling previous seven days use the preceding time window rather than the 
  const filters={...defaultFilters,scope:'last7'},selected=filterMatches(matches,filters);
  assert.deepEqual(previousMatches(matches,selected,filters).map(m=>m.matchId),['90002','90003']);
 });
+
+import {labRows,pooled,splitProfile,opponents,nearestMatches,experimentResult,eligible} from '../lib/team-lab.ts';
+function labFixture(id,time,events='215:10,216:2,30:6,31:2,13:2,14:1,18:1,19:0,217:3,218:1,105:1,106:2,107:1,108:1,109:1,110:2'){
+ return {matchId:String(id),timestamp:time,clubs:{'79638':{goals:'2'},'99':{goals:'1',details:{name:'Rakip'}}},players:{'79638':{a:{playername:'A',pos:'midfielder',match_event_aggregate_0:events}}}};
+}
+test('lab pools event fractions, validates shot partitions and distinguishes no attempts',()=>{
+ const rows=labRows([labFixture(1,100),labFixture(2,200,'215:1,216:0,13:0,14:0,18:1,217:1')]);
+ assert.equal(pooled(rows,'insideShare'),60);
+ assert.equal(pooled(rows,'outsideAccuracy'),100);
+ assert.equal(pooled(labRows([labFixture(3,300,'215:2')]),'insideShare'),null);
+ const bad=labRows([labFixture(4,400,'215:2,13:8,217:1')])[0];
+ assert.equal(eligible(bad,'insideShare'),false);
+ assert.equal(pooled([bad],'insideShare'),null);
+ assert.equal(labRows([{...labFixture(5,500),clubs:{'79638':{},'99':{goals:'0'}}}]).length,0);
+});
+test('lab requires metric coverage and excludes median ties without manufacturing a recommendation',()=>{
+ const source=labRows([labFixture(1,100)])[0];
+ const rows=Array.from({length:11},(_,i)=>({...source,id:String(i),metrics:{...source.metrics,insideShare:{num:i,den:10,covered:1}}}));
+ const split=splitProfile(rows,'insideShare');assert.equal(split.low.length,5);assert.equal(split.high.length,5);assert.equal(split.ties,1);assert.equal(split.enough,true);
+ assert.equal(splitProfile(rows.slice(0,3),'insideShare').enough,false);
+ assert.equal(splitProfile([{...source,total:2}],'insideShare').excluded,1);
+});
+test('lab similarity never uses future matches or insufficient target coverage',()=>{
+ const rows=labRows([labFixture(1,100),labFixture(2,200),labFixture(3,300)]);
+ assert.deepEqual(nearestMatches(rows[1],rows).map(x=>x.row.id),['1']);
+ assert.equal(nearestMatches({...rows[0],total:5},rows).length,0);
+});
+test('rematches group by stable club ID and experiment windows stay prospective',()=>{
+ const rows=labRows([labFixture(1,100),labFixture(2,200),labFixture(3,300),labFixture(4,400)]);
+ rows[0].opponent='New name';assert.equal(opponents(rows).length,1);
+ const result=experimentResult({id:'x',title:'Try',metric:'insideShare',start:250,target:1,baselineIds:['1','4'],createdAt:0},rows);
+ assert.deepEqual(result.baseline.map(x=>x.id),['1']);assert.deepEqual(result.after.map(x=>x.id),['3']);assert.equal(result.complete,true);
+});
+test('laboratory and rematch routes round trip',()=>{
+ for(const [path,section] of [['/laboratuvar','Takım Laboratuvarı'],['/rovans','Rövanş defteri']]){
+  const search=routeSearch(path,'');assert.equal(new URLSearchParams(search).get('leo_tab'),section);assert.equal(locationFromSearch(search),path);
+ }
+});
