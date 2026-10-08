@@ -926,7 +926,7 @@ export function PrintableReport({ report }: { report: AnalyticsReport }) {
           series={[
             {
               label: "Takım puanı · 3/1/0",
-              color: "#e8bc68",
+              color: "#173de8",
               values: report.trend.map((m) => m.points),
             },
           ]}

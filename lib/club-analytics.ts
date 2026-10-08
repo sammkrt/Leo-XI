@@ -16,11 +16,11 @@ export const roles: Record<string, string> = {
   unknown: "Rol yok",
 };
 export const roleColors: Record<string, string> = {
-  forward: "#e8bc68",
-  midfielder: "#85bda8",
-  defender: "#87a9dc",
-  goalkeeper: "#c399cf",
-  unknown: "#a0a4b0",
+  forward: "#173de8",
+  midfielder: "#13764d",
+  defender: "#327ca0",
+  goalkeeper: "#7548b4",
+  unknown: "#67758a",
 };
 export type RawPlayer = Record<string, unknown>;
 export type PlayerRow = {

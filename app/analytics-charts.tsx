@@ -74,7 +74,7 @@ export function ChartCard({
       canvas.height = 720;
       const context = canvas.getContext("2d");
       if (!context) throw Error("Canvas");
-      context.fillStyle = "#141518";
+      context.fillStyle = "#ffffff";
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(img, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise<Blob | null>((resolve) =>
@@ -130,6 +130,7 @@ export function ChartCard({
 }
 const chartBase = {
   xmlns: "http://www.w3.org/2000/svg",
+  fontFamily: "Arial, sans-serif",
   width: 600,
   height: 360,
   viewBox: "0 0 600 360",
@@ -212,7 +213,7 @@ export function ScatterChart({
         role="img"
         aria-label={`${xLabel} ve ${yLabel}. ${points.length} nokta; kesikli çizgiler seçili kohort medyanı.`}
       >
-        <rect width="600" height="360" fill="#141518" rx="12" />
+        <rect width="600" height="360" fill="#ffffff" rx="12" />
         <defs>
           <marker
             id="analytics-arrow"
@@ -223,7 +224,7 @@ export function ScatterChart({
             markerHeight="6"
             orient="auto-start-reverse"
           >
-            <path d="M0 0 L10 5 L0 10z" fill="#daba80" />
+            <path d="M0 0 L10 5 L0 10z" fill="#173de8" />
           </marker>
         </defs>
         {[0, 0.25, 0.5, 0.75, 1].map((f) => (
@@ -233,13 +234,13 @@ export function ScatterChart({
               x2="553"
               y1={62 + f * 232}
               y2={62 + f * 232}
-              stroke="#ffffff18"
+              stroke="#dbe0e9"
             />
             <text
               x="58"
               y={66 + f * 232}
               textAnchor="end"
-              fill="#b9bec8"
+              fill="#596476"
               fontSize="10"
             >
               {numberLabel(maxY - f * (maxY - minY), 1)}
@@ -248,7 +249,7 @@ export function ScatterChart({
               x={68 + f * 485}
               y="314"
               textAnchor="middle"
-              fill="#b9bec8"
+              fill="#596476"
               fontSize="10"
             >
               {numberLabel(minX + f * (maxX - minX), 1)}
@@ -260,7 +261,7 @@ export function ScatterChart({
           x2={x(mx)}
           y1="62"
           y2="294"
-          stroke="#daba8066"
+          stroke="#173de866"
           strokeDasharray="4 5"
         />
         <line
@@ -268,19 +269,19 @@ export function ScatterChart({
           x2="553"
           y1={y(my)}
           y2={y(my)}
-          stroke="#daba8066"
+          stroke="#173de866"
           strokeDasharray="4 5"
         />
-        <text x="72" y="40" fill="#8e96a5" fontSize="9">
+        <text x="72" y="40" fill="#596476" fontSize="9">
           Düşük X / yüksek Y
         </text>
-        <text x="549" y="40" textAnchor="end" fill="#8e96a5" fontSize="9">
+        <text x="549" y="40" textAnchor="end" fill="#596476" fontSize="9">
           Yüksek X / yüksek Y
         </text>
-        <text x="72" y="285" fill="#8e96a5" fontSize="9">
+        <text x="72" y="285" fill="#596476" fontSize="9">
           Düşük X / düşük Y
         </text>
-        <text x="549" y="285" textAnchor="end" fill="#8e96a5" fontSize="9">
+        <text x="549" y="285" textAnchor="end" fill="#596476" fontSize="9">
           Yüksek X / düşük Y
         </text>
         {prior.map((p) => {
@@ -293,7 +294,7 @@ export function ScatterChart({
                 y1={y(p.y)}
                 x2={x(next.x)}
                 y2={y(next.y)}
-                stroke="#daba80"
+                stroke="#173de8"
                 strokeWidth="2"
                 markerEnd="url(#analytics-arrow)"
               />
@@ -338,9 +339,9 @@ export function ScatterChart({
               {(p.id === selected || focusedGroup === key) && <text
                 x={Math.min(530, x(p.x) + 10)}
                 y={Math.max(54, y(p.y) - 12)}
-                fill="#ecedef"
+                fill="#151f30"
                 fontSize="13"
-                stroke="#141518"
+                stroke="#ffffff"
                 strokeWidth="3"
                 paintOrder="stroke"
               >
@@ -349,13 +350,13 @@ export function ScatterChart({
             </g>
           );
         })}
-        <text x="310" y="343" textAnchor="middle" fill="#daba80" fontSize="11">
+        <text x="310" y="343" textAnchor="middle" fill="#173de8" fontSize="11">
           {xLabel}
         </text>
         <text
           transform="translate(17 180) rotate(-90)"
           textAnchor="middle"
-          fill="#daba80"
+          fill="#173de8"
           fontSize="11"
         >
           {yLabel}
@@ -399,7 +400,7 @@ export function TrendChart({
             " zaman çizgisi. Eksik verilerde çizgi kesilir."
           }
         >
-          <rect width="600" height="360" fill="#141518" />
+          <rect width="600" height="360" fill="#ffffff" />
           {[0, 0.5, 1].map((f) => (
             <g key={f}>
               <line
@@ -407,12 +408,12 @@ export function TrendChart({
                 x2="555"
                 y1={60 + 230 * f}
                 y2={60 + 230 * f}
-                stroke="#ffffff18"
+                stroke="#dbe0e9"
               />
               <text
                 x="50"
                 y={64 + 230 * f}
-                fill="#a8adb8"
+                fill="#596476"
                 textAnchor="end"
                 fontSize="11"
               >
@@ -475,7 +476,7 @@ export function TrendChart({
                 x={x(i)}
                 y="320"
                 textAnchor="middle"
-                fill="#a8adb8"
+                fill="#596476"
                 fontSize="10"
               >
                 {label.slice(0, 15)}
@@ -557,7 +558,7 @@ export function Distribution({
           slices.map((s) => s.label + " " + s.value).join(", ")
         }
       >
-        <rect width="600" height="360" fill="#141518" />
+        <rect width="600" height="360" fill="#ffffff" />
         {slices.map((slice, i) => {
           const start =
             (slices.slice(0, i).reduce((a, s) => a + s.value, 0) / total) * 360;
@@ -588,11 +589,11 @@ export function Distribution({
             </path>
           );
         })}
-        <circle cx="300" cy="180" r="77" fill="#141518" />
-        <text x="300" y="179" textAnchor="middle" fill="#f4e9d2" fontSize="32">
+        <circle cx="300" cy="180" r="77" fill="#ffffff" />
+        <text x="300" y="179" textAnchor="middle" fill="#151f30" fontSize="32">
           {total}
         </text>
-        <text x="300" y="204" textAnchor="middle" fill="#b9bec8" fontSize="12">
+        <text x="300" y="204" textAnchor="middle" fill="#596476" fontSize="12">
           gözlenen toplam
         </text>
       </svg>

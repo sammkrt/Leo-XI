@@ -122,9 +122,9 @@ function subscribeJournal(callback: () => void) {
 }
 function playerColor(id: string) {
   const palette = [
-    "#e8bc68",
-    "#85bda8",
-    "#87a9dc",
+    "#173de8",
+    "#13764d",
+    "#327ca0",
     "#c399cf",
     "#d99681",
     "#b5ba74",
@@ -1138,10 +1138,10 @@ function TeamView({
             y,
             color:
               row.result === "G"
-                ? "#8ac8a3"
+                ? "#13764d"
                 : row.result === "B"
-                  ? "#daba80"
-                  : "#dd9296",
+                  ? "#173de8"
+                  : "#c23b50",
             detail: `${row.date} ${row.opponent} ${row.goals}:${row.conceded} · X ${x} / Y ${y}; insan şut/pas/olay kapsamı ${row.metrics.shots.covered}/${row.metrics.shots.available}`,
           },
         ];
@@ -1177,9 +1177,9 @@ function TeamView({
         });
   const rows = filterPlayerRows(matches, report.filters);
   let slices = [
-    { label: "Galibiyet", value: report.team.wins, color: "#8ac8a3" },
-    { label: "Beraberlik", value: report.team.draws, color: "#daba80" },
-    { label: "Mağlubiyet", value: report.team.losses, color: "#dd9296" },
+    { label: "Galibiyet", value: report.team.wins, color: "#13764d" },
+    { label: "Beraberlik", value: report.team.draws, color: "#173de8" },
+    { label: "Mağlubiyet", value: report.team.losses, color: "#c23b50" },
   ];
   if (dist === "losses" || dist === "wins")
     slices = (["Defense", "Midfield", "Attack"] as const).flatMap((zone, i) => {
@@ -1191,7 +1191,7 @@ function TeamView({
             {
               label: ["Savunma", "Orta saha", "Hücum"][i],
               value: r.total,
-              color: ["#87a9dc", "#85bda8", "#e8bc68"][i],
+              color: ["#327ca0", "#13764d", "#173de8"][i],
             },
           ];
     });
@@ -1219,7 +1219,7 @@ function TeamView({
             {
               label: r.label,
               value: r.made + r.failed,
-              color: ["#e8bc68", "#85bda8", "#87a9dc", "#999da7"][i],
+              color: ["#173de8", "#13764d", "#327ca0", "#999da7"][i],
             },
           ],
     );
@@ -1410,8 +1410,8 @@ function TeamView({
           <TrendChart
             labels={report.trend.map((m) => m.date)}
             series={[
-              { label: "Maç kaydı", color: "#e8bc68", values },
-              { label: "Son 5 · hareketli", color: "#85bda8", values: rolling },
+              { label: "Maç kaydı", color: "#173de8", values },
+              { label: "Son 5 · hareketli", color: "#13764d", values: rolling },
             ]}
             onSelect={(i) => onMatch(report.trend[i].matchId)}
           />
@@ -1726,7 +1726,7 @@ function SessionView({
           series={[
             {
               label: "Puan (3/1/0)",
-              color: "#daba80",
+              color: "#173de8",
               values: chronological.map((m) => m.points),
             },
           ]}
@@ -1872,7 +1872,7 @@ function CompareView({
       >
         {players.length >= 2 ? (
           <>
-            <svg
+            <svg fontFamily="Arial, sans-serif"
               xmlns="http://www.w3.org/2000/svg"
               data-chart="true"
               viewBox="0 0 600 360"
@@ -1882,7 +1882,7 @@ function CompareView({
               role="img"
               aria-label="İki oyuncunun ayrı metrik ölçeklerindeki gerçek değerleri"
             >
-              <rect width="600" height="360" fill="#141518" />
+              <rect width="600" height="360" fill="#ffffff" />
               {radarMetrics.map((id, i) => {
                 const a = displayValue(
                     players[0].metrics[id],
@@ -1898,7 +1898,7 @@ function CompareView({
                   y = 40 + i * 49;
                 return (
                   <g key={id}>
-                    <text x="12" y={y} fill="#c4c6cc" fontSize="11">
+                    <text x="12" y={y} fill="#151f30" fontSize="11">
                       {metrics[id].label}
                     </text>
                     <line
@@ -1906,14 +1906,14 @@ function CompareView({
                       x2="570"
                       y1={y - 4}
                       y2={y - 4}
-                      stroke="#ffffff22"
+                      stroke="#dbe0e9"
                     />
                     {a !== null && (
                       <circle
                         cx={210 + (a / max) * 360}
                         cy={y - 4}
                         r="6"
-                        fill="#e8bc68"
+                        fill="#173de8"
                       />
                     )}
                     {b !== null && (
@@ -1922,10 +1922,10 @@ function CompareView({
                         y={y - 9}
                         width="10"
                         height="10"
-                        fill="#87a9dc"
+                        fill="#327ca0"
                       />
                     )}
-                    <text x="210" y={y + 17} fill="#a8adb8" fontSize="10">
+                    <text x="210" y={y + 17} fill="#596476" fontSize="10">
                       {numberLabel(a)} / {numberLabel(b)} · fark{" "}
                       {numberLabel(a === null || b === null ? null : a - b)}{" "}
                       {metricUnit(id, report.filters.mode)}
@@ -1950,7 +1950,7 @@ function CompareView({
       >
         {validRadar ? (
           <>
-            <svg
+            <svg fontFamily="Arial, sans-serif"
               xmlns="http://www.w3.org/2000/svg"
               data-chart="true"
               viewBox="0 0 600 360"
@@ -1960,7 +1960,7 @@ function CompareView({
               role="img"
               aria-label="Rol içi yüzdelik radar"
             >
-              <rect width="600" height="360" fill="#141518" />
+              <rect width="600" height="360" fill="#ffffff" />
               {[0.25, 0.5, 0.75, 1].map((f) => (
                 <polygon
                   key={f}
@@ -1970,7 +1970,7 @@ function CompareView({
                         `${300 + 120 * f * Math.cos((i * Math.PI) / 3 - Math.PI / 2)},${175 + 120 * f * Math.sin((i * Math.PI) / 3 - Math.PI / 2)}`,
                     )
                     .join(" ")}
-                  stroke="#ffffff22"
+                  stroke="#dbe0e9"
                   fill="none"
                 />
               ))}
@@ -1979,7 +1979,7 @@ function CompareView({
                   key={id}
                   x={300 + 140 * Math.cos((i * Math.PI) / 3 - Math.PI / 2)}
                   y={180 + 140 * Math.sin((i * Math.PI) / 3 - Math.PI / 2)}
-                  fill="#bbbfc8"
+                  fill="#596476"
                   fontSize="10"
                   textAnchor="middle"
                 >
@@ -1995,8 +1995,8 @@ function CompareView({
                         `${300 + ((120 * r!.value) / 100) * Math.cos((i * Math.PI) / 3 - Math.PI / 2)},${175 + ((120 * r!.value) / 100) * Math.sin((i * Math.PI) / 3 - Math.PI / 2)}`,
                     )
                     .join(" ")}
-                  stroke={index ? "#87a9dc" : "#e8bc68"}
-                  fill={index ? "#87a9dc22" : "#e8bc6822"}
+                  stroke={index ? "#327ca0" : "#173de8"}
+                  fill={index ? "#327ca022" : "#173de822"}
                   strokeDasharray={index ? "5 3" : undefined}
                 />
               ))}
