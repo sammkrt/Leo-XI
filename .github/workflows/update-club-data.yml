@@ -4,8 +4,8 @@ on:
     # Use GitHub's long-established UTC scheduler for four reliable attempts.
     # Amsterdam: 04:17–07:17 during CEST, 03:17–06:17 during CET.
     - cron: '17 2-5 * * *'
-    # Temporary end-to-end schedule proof for 8 Oct 2026, 09:30 Amsterdam.
-    - cron: '30 7 8 10 *'
+    # Temporary end-to-end scheduler proof; remove after the first schedule run.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       diagnostics:
