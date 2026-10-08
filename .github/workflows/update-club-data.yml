@@ -1,9 +1,14 @@
 name: Update EA club data
 on:
   schedule:
-    # Use GitHub's long-established UTC scheduler for four reliable attempts.
-    # Amsterdam: 04:17–07:17 during CEST, 03:17–06:17 during CET.
-    - cron: '17 2-5 * * *'
+    # Local Amsterdam time; timezone follows daylight-saving changes.
+    # 21:00 through 01:50, then exactly 02:00 and 07:00.
+    - cron: '*/10 21-23,0-1 * * *'
+      timezone: 'Europe/Amsterdam'
+    - cron: '0 2 * * *'
+      timezone: 'Europe/Amsterdam'
+    - cron: '0 7 * * *'
+      timezone: 'Europe/Amsterdam'
   workflow_dispatch:
     inputs:
       diagnostics:
