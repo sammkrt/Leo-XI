@@ -444,8 +444,8 @@ test('weekly cards count only last seven days, deduplicate matches and include a
 test('weekly cards share titles on ties and never fabricate awards for empty weeks',()=>{
  const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'a',proName:'A'},{name:'b',proName:'B'}];
  const match={...snapshot.matches[0],players:{'79638':{a:{playername:'a',shots:5,goals:1,assists:2,passattempts:10,passesmade:5},b:{playername:'b',shots:5,goals:1,assists:2,passattempts:10,passesmade:5}}}};
- const result=weeklyCards([match],members,now);for(const card of Object.values(result))assert.deepEqual(card.players,members);
- assert.deepEqual(weeklyCards([match],members,now+8*86400000),{washing:null,potato:null,absent:null,carrying:null});
+ const result=weeklyCards([match],members,now);for(const key of ['washing','potato','absent','carrying'])assert.deepEqual(result[key].players,members);
+ assert.deepEqual(weeklyCards([match],members,now+8*86400000),{washing:null,potato:null,absent:null,carrying:null,fouls:null,assassin:null});
  assert.equal(weeklyCards([{...match,players:{}}],members,now).absent,null);
 });
 test('weekly card metrics independently reject missing and contradictory counters',()=>{
@@ -459,4 +459,28 @@ test('weekly cards follow stable player IDs across username changes',()=>{
  const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'current',proName:'Current'}];const row=name=>({playername:name,shots:3,goals:1,assists:1,passattempts:10,passesmade:8});
  const latest={...snapshot.matches[0],players:{'79638':{stable:row('current')}}};const older={...latest,matchId:'1234567',timestamp:latest.timestamp-3600,players:{'79638':{stable:row('old-name')}}};
  const result=weeklyCards([older,latest],members,now);assert.equal(result.absent.value,2);assert.equal(result.washing.value,4);assert.equal(result.carrying.value,4);
+});
+
+
+test('weekly discipline cards pool fouls and cards, preserve zero-card winners and share exact ratio ties',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000;
+ const members=['a','b','c','d'].map(name=>({name,proName:name}));
+ const row=(name,fouls,yellow,red=0)=>({playername:name,redcards:red,match_event_aggregate_0:`2:${fouls},95:${yellow}`});
+ const make=(id,players)=>({...snapshot.matches[0],matchId:id,players:{'79638':players}});
+ const matches=[make('1',{a:row('a',2,1),b:row('b',4,1),c:row('c',0,0),d:row('d',2,0)}),make('2',{a:row('a',8,1),b:row('b',6,1),d:row('d',1,0)})];
+ const result=weeklyCards(matches,members,now);
+ assert.equal(result.fouls.value,10);assert.deepEqual(result.fouls.players,members.slice(0,2));
+ assert.equal(result.assassin.value,0);assert.deepEqual(result.assassin.players,[members[3]]);
+ const tied=weeklyCards(matches,members.slice(0,3),now);assert.equal(tied.assassin.value,.2);assert.deepEqual(tied.assassin.players,members.slice(0,2));
+});
+test('weekly discipline ignores incomplete or contradictory events and requires a positive foul denominator',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000, members=[{name:'a',proName:'A'}];
+ const make=(id,row)=>({...snapshot.matches[0],matchId:id,players:{'79638':{a:{playername:'a',...row}}}});
+ assert.equal(weeklyCards([make('1',{redcards:0,match_event_aggregate_0:'95:1'})],members,now).assassin,null);
+ const valid=make('1',{redcards:1,match_event_aggregate_0:'2:2,3:2,95:1,213:1'});
+ assert.equal(weeklyCards([valid],members,now).assassin.value,.75);
+ for(const broken of [{}, {match_event_aggregate_0:'2:bad'}, {goals:1,match_event_aggregate_0:'2:1'}]){
+  const result=weeklyCards([valid,make('2',broken)],members,now);assert.equal(result.fouls,null);assert.equal(result.assassin,null);
+ }
+ const missingRed=weeklyCards([make('1',{match_event_aggregate_0:'2:3'})],members,now);assert.equal(missingRed.fouls.value,3);assert.equal(missingRed.assassin,null);
 });
