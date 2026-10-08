@@ -4,7 +4,7 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 export { ClubStore } from "../lib/club-store";
 
-const GITHUB_BACKUP_CRON = "*/5 * * * *";
+const GITHUB_BACKUP_CRON = "27 2-5 * * *";
 
 async function dispatchMatchCollection(token: string) {
   const response = await fetch("https://api.github.com/repos/sammkrt/Leo-XI/actions/workflows/update-club-data.yml/dispatches", {
