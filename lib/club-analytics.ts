@@ -793,8 +793,12 @@ export function filtersToSearch(
     tag: filters.tag,
     tab: "Analiz",
   };
+  const defaults: Record<string, string> = {
+    scope: 'all', view: 'team', role: 'all', result: 'all', opponent: 'all',
+    type: 'all', minMatches: '1', minAttempts: '0', gap: '120', mode: 'perMatch', compare: 'previous',
+  };
   for (const [key, value] of Object.entries(fields)) {
-    if (value) p.set("leo_" + key, value);
+    if (value && value !== defaults[key]) p.set("leo_" + key, value);
     else p.delete("leo_" + key);
   }
   return p.toString();

@@ -1,3 +1,4 @@
+import {locationFromSearch,routeSearch} from '../lib/club-routes.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import snapshot from '../data/snapshot.json' with {type:'json'};
@@ -397,4 +398,34 @@ test('analytics opponent match data shares canonical CSV/JSON math and never tur
  const report=buildAnalyticsReport([match],{...defaultFilters,scope:'match',key:'1',playerIds:['p']},exportTime);
  assert.equal(report.opponents.length,1);assert.equal(report.opponents[0].playerMetrics.passRate.value,80);assert.equal(report.opponents[0].playerMetrics.goals.value,null);assert.ok(analyticsCSV(report).includes('"rakip-insan-kayıtları",""'));assert.ok(analyticsCSV(report).split('\r\n')[0].endsWith('"kulüpId"'));assert.equal(report.players.length,1);
  const filtered=buildAnalyticsReport([match],{...defaultFilters,scope:'match',key:'1',role:'midfielder'},exportTime);assert.equal(filtered.opponents[0].playerMetrics.passRate.value,null);
+});
+
+
+test('readable match URLs migrate legacy filters without losing the selected match',()=>{
+ const legacy='leo_tab=Analiz&leo_scope=match&leo_view=match&leo_role=all&leo_result=all&leo_opponent=all&leo_type=all&leo_minMatches=1&leo_minAttempts=0&leo_gap=120&leo_mode=perMatch&leo_compare=previous&leo_key=74140658290365';
+ const target=locationFromSearch(routeSearch('/',legacy));assert.equal(target,'/analiz/mac/74140658290365');
+ assert.deepEqual(filtersFromSearch(routeSearch(target)),filtersFromSearch(legacy));
+});
+test('readable URLs retain changed filters, repeated unrelated parameters and encoded session IDs',()=>{
+ const filters={...defaultFilters,view:'session',scope:'session',key:'2026-10-07:late',playerIds:['1','2'],role:'defender',mode:'total',gapMinutes:90};
+ const search=filtersToSearch(filters,'keep=one&keep=two');const url=locationFromSearch(search);const parsed=new URL(url,'https://club.test');
+ assert.equal(parsed.pathname,'/analiz/seans/2026-10-07%3Alate');assert.equal(parsed.searchParams.has('leo_scope'),false);
+ const decoded=routeSearch(parsed.pathname,parsed.search);assert.deepEqual(filtersFromSearch(decoded),filters);assert.deepEqual(new URLSearchParams(decoded).getAll('keep'),['one','two']);
+ assert.equal(locationFromSearch(decoded),url);
+});
+test('normal section paths do not retain analytics filters and the homepage resolves on back navigation',()=>{
+ for(const [tab,path]of [['Genel bakış','/'],['Maçlar','/maclar'],['Kadro','/kadro'],['Karşılaştır','/karsilastir'],['Maç gecesi','/mac-gecesi']]){
+  assert.equal(locationFromSearch('leo_tab='+encodeURIComponent(tab)+'&leo_scope=month&leo_key=2026-10&leo_view=players'),path);
+  assert.equal(new URLSearchParams(routeSearch(path)).get('leo_tab'),tab);
+ }
+});
+test('analytics defaults are omitted and every view survives direct URL parsing',()=>{
+ assert.equal(locationFromSearch(filtersToSearch(defaultFilters)),'/analiz');
+ for(const [view,path]of [['team','/analiz'],['players','/analiz/oyuncular'],['match','/analiz/mac'],['session','/analiz/seans'],['compare','/analiz/karsilastir'],['matrix','/analiz/matris'],['pairs','/analiz/ikili'],['development','/analiz/gelisim']]){
+  const query=routeSearch(path);assert.equal(filtersFromSearch(query).view,view);assert.equal(locationFromSearch(query),path);
+ }
+ const query=routeSearch('/analiz/oyuncular','scope=month&key=2026-10&role=defender');assert.equal(filtersFromSearch(query).scope,'month');assert.equal(filtersFromSearch(query).key,'2026-10');
+});
+test('unknown routes and malformed match identifiers are rejected',()=>{
+ for(const path of ['/unknown','/kadro/extra','/analiz/unknown','/analiz/mac/invalid','/analiz/mac/12/extra','/analiz/seans/a%2Fb','/analiz/%zz'])assert.equal(routeSearch(path),null,path);
 });

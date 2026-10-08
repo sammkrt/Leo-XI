@@ -16,9 +16,9 @@ main{padding:24px 28px 40px;outline:none}
 .heroRecord{margin-top:24px;padding:20px 0;gap:32px}
 .heroRecord strong{font-size:26px}
 .tabs{position:sticky;top:12px;bottom:auto;left:auto;transform:none;z-index:5;display:flex;justify-content:stretch;width:100%;max-width:100%;height:auto;margin:0 0 28px;padding:6px;border-radius:16px;background:#151b23f5;border:1px solid var(--line);box-shadow:0 8px 24px #0003;backdrop-filter:blur(16px)}
-.tabs button{flex:1;justify-content:center;flex-direction:row;gap:8px;font-size:13px;padding:12px 8px;min-width:0;min-height:48px;border-radius:10px;color:var(--muted)}
-.tabs button.active{background:var(--gold);color:#171a20;font-weight:650}
-.tabs button:hover:not(.active){background:#ffffff09;color:var(--text)}
+.tabs :is(button,a){flex:1;justify-content:center;flex-direction:row;gap:8px;font-size:13px;padding:12px 8px;min-width:0;min-height:48px;border-radius:10px;color:var(--muted)}
+.tabs :is(button,a).active{background:var(--gold);color:#171a20;font-weight:650}
+.tabs :is(button,a):hover:not(.active){background:#ffffff09;color:var(--text)}
 .quickActions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 32px}
 .quickActions button{display:flex;align-items:center;gap:16px;padding:20px;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
 .quickActions button>svg:first-child{color:var(--gold);flex-shrink:0}
@@ -59,7 +59,7 @@ footer{margin-top:36px;font-size:12px;align-items:flex-start}
  body{padding-bottom:0}main{padding:18px 16px 32px}.siteHeader{height:76px;padding:0 18px}
  .headerRight .sourceBadge{display:none}.updateStamp{font-size:11px!important}
  .tabs{top:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible;margin-bottom:24px;border-radius:14px}
- .tabs button{min-width:0;font-size:12px;min-height:44px;padding:10px 4px;gap:6px}.tabs svg{width:16px;height:16px}
+ .tabs :is(button,a){min-width:0;font-size:12px;min-height:44px;padding:10px 4px;gap:6px}.tabs svg{width:16px;height:16px}
  .clubHero{padding:24px 22px 0}.heroCopy{max-width:80%}.heroLogo{width:110px;height:110px;right:16px;top:32px;opacity:.4}
  .heroSubtitle{font-size:14px;max-width:75%}.heroRecord{gap:24px}.heroRecord .formGroup{width:100%;margin-left:0}
  .quickActions{gap:12px}.quickActions button{padding:16px;gap:10px}.quickActions strong{font-size:14px}.quickActions small{font-size:12px}
@@ -81,10 +81,10 @@ footer{margin-top:36px;font-size:12px;align-items:flex-start}
 /* Reset the previous sidebar layout to a single shared content column. */
 .siteHeader{position:relative;inset:auto;width:100%;height:84px;margin:0 auto;padding:0 28px;flex-direction:row;align-items:center;justify-content:space-between;background:transparent;border:0;border-bottom:1px solid var(--line);box-shadow:none;backdrop-filter:none}
 .brand{padding:0;border:0}.headerRight{margin:0;padding:0;display:flex;background:none;border:0;gap:24px}.updateStamp{display:block}
-main{margin:0 auto;width:100%}.tabs{inset:auto;top:12px;flex-direction:row}.tabs button{width:auto;box-shadow:none!important}.tabs button:hover{transform:none}
+main{margin:0 auto;width:100%}.tabs{inset:auto;top:12px;flex-direction:row}.tabs :is(button,a){width:auto;box-shadow:none!important}.tabs :is(button,a):hover{transform:none}
 .heroRecord .formGroup{display:grid}.heroRecord{background:none}.heroRecord .formGroup>div{flex-wrap:wrap}
 .statGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.heroCopy .heroSubtitle{font-size:15px}
-@media(max-width:780px){.siteHeader{height:76px;padding:0 18px}.headerRight{gap:12px}.tabs{inset:auto;top:8px}.tabs button{flex-direction:row}.statGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.heroCopy .heroSubtitle{font-size:14px}}
+@media(max-width:780px){.siteHeader{height:76px;padding:0 18px}.headerRight{gap:12px}.tabs{inset:auto;top:8px}.tabs :is(button,a){flex-direction:row}.statGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.heroCopy .heroSubtitle{font-size:14px}}
 @media(max-width:480px){.updateStamp{display:none}.heroRecord .formGroup{display:grid;width:100%}.heroRecord{margin-top:24px}}
 .clubHero{grid-template-columns:minmax(0,1fr)}
 .heroCopy{max-width:calc(100% - 220px)}

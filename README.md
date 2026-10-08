@@ -33,6 +33,12 @@ pnpm start
 
 Durable Object deposu yerel Wrangler/Miniflare ortamında çalışır. `.wrangler/` içeriği Git'e gönderilmez.
 
+## Sayfa adresleri
+
+Bölümler `/maclar`, `/kadro`, `/karsilastir`, `/mac-gecesi` ve `/analiz` adreslerinden doğrudan açılır. Tek maç analizi `/analiz/mac/{matchId}`, seans analizi `/analiz/seans/{seansId}` biçimindedir. Diğer analiz görünümleri `/analiz/oyuncular`, `/analiz/karsilastir`, `/analiz/matris`, `/analiz/ikili` ve `/analiz/gelisim` adreslerini kullanır.
+
+Yalnız varsayılandan farklı filtreler sorgu parametresi olarak tutulur; örneğin `/analiz/mac/74140658290365?mode=total`. Eski `leo_*` bağlantıları seçimi koruyarak temiz adreslere HTTP 308 ile yönlendirilir. Sayfa yenileme ve tarayıcının geri/ileri düğmeleri desteklenir. Bölüm değiştirildiğinde analiz filtreleri diğer bölümlerin adreslerine taşınmaz. `/api/club`, `/api/archive` ve `/api/attendance` uç noktaları değişmez.
+
 ## Cloudflare Workers ile yayınlama
 
 Cloudflare Workers & Pages bölümünde GitHub reposu `sammkrt/Leo-XI`, üretim dalı `main` seçilir.
