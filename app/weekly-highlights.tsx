@@ -7,7 +7,7 @@ export default function WeeklyHighlights({matches,members,onPlayer}:{matches:Mat
   const cards = [
     { id:'washing', title:'Haftanın Çamaşır Makinesi', icon:'🧺', value:results.washing?.value ?? null, unit:'golsüz şut', players:results.washing?.players || [], empty:'Bu hafta seçilemedi.' },
     { id:'potato', title:'Haftanın Patatesi', icon:'🥔', value:results.potato?.value ?? null, unit:'başarısız pas', players:results.potato?.players || [], empty:'Bu hafta seçilemedi.' },
-    { id:'absent', title:'Haftanın En Gayi', icon:'👻', value:results.absent?.value ?? null, unit:'kayıtlı maç', players:results.absent?.players || [], empty:'Henüz kayıtlı maç yok.' },
+    { id:'absent', title:'Haftanın En Gayi', icon:'🏳️‍🌈', value:results.absent?.value ?? null, unit:'kayıtlı maç', players:results.absent?.players || [], empty:'Henüz kayıtlı maç yok.' },
     { id:'carrying', title:'Haftanın Eşek Yükü', icon:'🎒', value:results.carrying?.value ?? null, unit:'gol + asist', players:results.carrying?.players || [], empty:'Henüz gol + asist kaydı yok.' },
   ];
   return <section className="weeklyHighlights" aria-label="Haftanın kartları">
