@@ -1,0 +1,74 @@
+{
+  "aerdemuzunay": {
+    "src": "/players/aerdemuzunay.jpg",
+    "x": 1295,
+    "y": 155,
+    "size": 180
+  },
+  "donmakavely": {
+    "src": "/players/donmakavely.jpg",
+    "x": 1285,
+    "y": 125,
+    "size": 200
+  },
+  "the_bueb": {
+    "src": "/players/the_bueb.jpg",
+    "x": 1295,
+    "y": 125,
+    "size": 180
+  },
+  "newth-us": {
+    "src": "/players/newth-us.jpg",
+    "x": 1300,
+    "y": 225,
+    "size": 180
+  },
+  "mft8603": {
+    "src": "/players/mft8603.jpg",
+    "x": 1300,
+    "y": 170,
+    "size": 170
+  },
+  "smtkrt": {
+    "src": "/players/smtkrt.jpg",
+    "x": 1300,
+    "y": 185,
+    "size": 170
+  },
+  "erdemkkali": {
+    "src": "/players/erdemkkali.jpg",
+    "x": 1300,
+    "y": 160,
+    "size": 170
+  },
+  "serhantes": {
+    "src": "/players/serhantes.jpg",
+    "x": 1300,
+    "y": 145,
+    "size": 170
+  },
+  "kahveci18": {
+    "src": "/players/kahveci18.jpg",
+    "x": 1300,
+    "y": 170,
+    "size": 170
+  },
+  "kaanito7717": {
+    "src": "/players/kaanito7717.jpg",
+    "x": 1300,
+    "y": 160,
+    "size": 170
+  },
+  "ercansuzen": {
+    "src": "/players/ercansuzen.jpg",
+    "x": 1300,
+    "y": 160,
+    "size": 170
+  },
+  "kobeizotop": {
+    "src": "/players/kobeizotop.jpg",
+    "x": 1300,
+    "y": 160,
+    "size": 170
+  }
+}

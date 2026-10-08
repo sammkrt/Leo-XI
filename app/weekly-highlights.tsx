@@ -1,4 +1,5 @@
 'use client';
+import PlayerAvatar from './player-avatar';
 import { useMemo } from 'react';
 import { weeklyCards } from '../lib/weekly-cards';
 import type { Match, Player } from '../lib/club-types';
@@ -18,7 +19,7 @@ export default function WeeklyHighlights({matches,members,onPlayer}:{matches:Mat
       <span className="weeklyIcon" aria-hidden="true">{card.icon}</span><h4>{card.title}</h4>
       {card.value !== null ? <><div className="weeklyNames">{card.players.map(person => {
         const member = members.find(player => player.name === person.name);
-        return member ? <button key={person.name} onClick={()=>onPlayer(member)} title={person.name}>{person.proName}</button> : <span key={person.name}>{person.proName}</span>;
+        return member ? <button key={person.name} onClick={()=>onPlayer(member)} title={person.name}><PlayerAvatar player={person} className="small"/><span>{person.proName}</span></button> : <span key={person.name}>{person.proName}</span>;
       })}</div><div className="weeklyValue"><strong>{card.id === 'assassin' ? card.value.toLocaleString('tr-TR', {maximumFractionDigits: 3}) : card.value}</strong><span>{card.unit}{card.players.length > 1 ? ' / oyuncu' : ''}</span></div></> : <div className="weeklyEmpty"><strong>—</strong><span>{card.empty}</span></div>}
     </article>)}</div>
     <p className="weeklyNote">Golsüz şut = şut − gol. Başarısız pas = denenen − başarılı pas. Suikastçı = (toplam sarı + kırmızı kart) / toplam faul; en düşük oran kazanır, en az bir faul gerekir. Eşitlikte unvan paylaşılır; yalnız kayıtlı maçlar sayılır.</p>
