@@ -1,6 +1,7 @@
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
 import {validateFeed,validateMatchFeed} from './club-feed.mjs';
+import {dispatchCollection} from './collection-scheduler.mjs';
 import type {ClubData,Match,MatchFeed} from './club-types';
 import {AWARD_VERSION,awardSnapshots,awardCalendarWeek} from './derived-awards.ts';
 import type {AwardSnapshot,AwardMember} from './derived-awards.ts';
@@ -105,6 +106,14 @@ export class ClubStore {
  async fetch(request:Request):Promise<Response>{
   await this.ready;const url=new URL(request.url);const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
   if(url.pathname==='/internal/sync')return json(await this.sync());
+  if(url.pathname==='/internal/collect'){
+   if(request.method!=='POST')return json({error:'Method not allowed'},405);
+   const {scheduledTime}=await request.json() as {scheduledTime:number};
+   const token=request.headers.get('Authorization')?.replace(/^Bearer /,'');
+   const result=await this.state.blockConcurrencyWhile(()=>dispatchCollection(this.state.storage,token,scheduledTime));
+   if(result.status==='failed')console.error('LEO XI collection dispatch failed',JSON.stringify(result));
+   return json(result,result.status==='failed'?502:200);
+  }
   if(url.pathname==='/api/club'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
    const latest=await this.latestData();
@@ -118,7 +127,7 @@ export class ClubStore {
    try{awards=await this.readAwards(this.state.storage)}catch{awardNotice='Unvan arşivi okunamadı; maç arşivi gösterilmeye devam ediyor.';}
    const lastMatchUpdate=await this.state.storage.get<string>('lastMatchUpdate')||(await this.latestData()).fetchedAt;
    const error=await this.state.storage.get('syncError');const stale=Date.now()-Date.parse(lastMatchUpdate)>36*60*60*1000;
-   return json({matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
+   return json({matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,collectionSchedule:await this.state.storage.get('collectionDispatch'),notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
   }
   if(url.pathname==='/api/attendance'){
    const day=url.searchParams.get('date')||amsterdamDay();if(!validDay(day))return json({error:'Geçerli bir tarih seç.'},400);

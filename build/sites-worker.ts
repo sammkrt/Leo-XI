@@ -5,9 +5,17 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 export { ClubStore } from "../lib/club-store";
 
 export default {
-  async scheduled(_controller: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
     const store = env.CLUB_STORE.get(env.CLUB_STORE.idFromName("leo-xi"));
     const tasks: Promise<unknown>[] = [store.fetch("https://club.internal/internal/sync").then(async response => { if (!response.ok) throw new Error("Club sync failed"); await response.arrayBuffer(); })];
+    tasks.push(store.fetch("https://club.internal/internal/collect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(env.GITHUB_DISPATCH_TOKEN ? { Authorization: `Bearer ${env.GITHUB_DISPATCH_TOKEN}` } : {}) },
+      body: JSON.stringify({ scheduledTime: controller.scheduledTime }),
+    }).then(async response => {
+      if (!response.ok) throw new Error("GitHub collection dispatch failed");
+      await response.arrayBuffer();
+    }));
 
     ctx.waitUntil(Promise.all(tasks));
   },
