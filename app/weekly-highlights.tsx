@@ -1,9 +1,11 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
+import { replaceSearch } from "./analytics-location";
+import { locationFromSearch } from "../lib/club-routes";
 import { weeklyCards } from "../lib/weekly-cards";
 import { AwardCards } from "./team-titles";
 import type { Match, Player } from "../lib/club-types";
+const titlesSearch = "leo_tab=Analiz&leo_view=titles&leo_scope=last7";
 export default function WeeklyHighlights({
   matches,
   members,
@@ -45,9 +47,15 @@ export default function WeeklyHighlights({
         }}
         onMatch={onMatch}
       />
-      <Link className="awardAllLink" href="/analiz/unvanlar?scope=last7">
+      <a className="awardAllLink" href={locationFromSearch(titlesSearch)} onClick={event => {
+        if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+          event.preventDefault();
+          replaceSearch(titlesSearch);
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }
+      }}>
         Takımın unvanları →
-      </Link>
+      </a>
       <p className="weeklyNote">
         LEO XI’ye özel takım içi eğlence endeksleri; başarı yüzdesi veya
         bilimsel oyuncu kalitesi değildir. Eşik, ortak veri ve en az dört uygun
