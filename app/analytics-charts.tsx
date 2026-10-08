@@ -143,6 +143,7 @@ export type ScatterPoint = {
   y: number;
   color: string;
   role?: string;
+  winner?: boolean;
   detail: string;
 };
 export function ScatterChart({
@@ -303,7 +304,7 @@ export function ScatterChart({
           ) : null;
         })}
         {[...groups].map(([key, group]) => {
-          const p = group.find((item) => item.id === selected) || group[0],
+          const p = group.find((item) => item.id === selected) || group.find(item=>item.winner) || group[0],
             label = group.length > 1 ? `${group.length} oyuncu/kayıt` : p.label;
           return (
             <g
@@ -326,17 +327,18 @@ export function ScatterChart({
             >
               <circle cx={x(p.x)} cy={y(p.y)} r="22" fill="transparent" />
               {marker(p, x(p.x), y(p.y))}
-              {p.id === selected && (
+              {(p.id === selected || group.some(item=>item.winner)) && (
                 <circle
                   cx={x(p.x)}
                   cy={y(p.y)}
                   r="10"
-                  stroke="#fff"
+                  stroke={group.some(item=>item.winner)?"#173de8":"#fff"}
+                  strokeWidth="2"
                   fill="none"
                 />
               )}
               <title>{group.map((p) => p.detail).join("\n")}</title>
-              {(p.id === selected || focusedGroup === key) && <text
+              {(p.id === selected || p.winner || focusedGroup === key) && <text
                 x={Math.min(530, x(p.x) + 10)}
                 y={Math.max(54, y(p.y) - 12)}
                 fill="#151f30"

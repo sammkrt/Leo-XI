@@ -651,6 +651,7 @@ export type AnalyticsScope =
   | "match"
   | "session"
   | "week"
+  | "last7"
   | "month"
   | "last5"
   | "last10"
@@ -664,7 +665,8 @@ export type AnalyticsView =
   | "compare"
   | "matrix"
   | "pairs"
-  | "development";
+  | "development"
+  | "titles";
 export type AnalyticsFilters = {
   scope: AnalyticsScope;
   key: string;
@@ -710,6 +712,7 @@ const scopes: AnalyticsScope[] = [
   "match",
   "session",
   "week",
+  "last7",
   "month",
   "last5",
   "last10",
@@ -725,6 +728,7 @@ const views: AnalyticsView[] = [
   "matrix",
   "pairs",
   "development",
+  "titles",
 ];
 const validDate = (s: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(s) &&
@@ -930,7 +934,9 @@ export function filterMatches(
     return true;
   });
   pool = [...pool].sort((a, b) => b.timestamp - a.timestamp);
-  if (filters.scope.startsWith("last"))
+  if (filters.scope === "last7")
+    pool = pool.filter(m => m.timestamp * 1000 >= Date.now() - 7 * 86400000 && m.timestamp * 1000 <= Date.now());
+  if (["last5", "last10", "last20"].includes(filters.scope))
     pool = pool.slice(0, Number(filters.scope.slice(4)));
   return pool;
 }
@@ -953,6 +959,12 @@ export function previousMatches(
       },
       journal,
     ).filter((m) => !selected.some((s) => s.matchId === m.matchId));
+  if (filters.scope === "last7") {
+    const now = Date.now();
+    return filterMatches(all, { ...filters, scope: "all" }, journal).filter(
+      m => m.timestamp * 1000 >= now - 14 * 86400000 && m.timestamp * 1000 < now - 7 * 86400000,
+    );
+  }
   const first = Math.min(...selected.map((m) => m.timestamp));
   const prior = filterMatches(
     all.filter((m) => m.timestamp < first),

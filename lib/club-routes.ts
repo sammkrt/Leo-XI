@@ -10,7 +10,7 @@ export const sectionPaths: Record<string, string> = {
 };
 const viewPaths: Record<string, string> = {
   team: '', players: 'oyuncular', match: 'mac', session: 'seans',
-  compare: 'karsilastir', matrix: 'matris', pairs: 'ikili', development: 'gelisim',
+  compare: 'karsilastir', matrix: 'matris', pairs: 'ikili', development: 'gelisim', titles: 'unvanlar',
 };
 const filterKeys = [
   'scope', 'view', 'key', 'from', 'to', 'players', 'role', 'result',

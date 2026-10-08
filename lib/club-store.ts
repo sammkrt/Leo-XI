@@ -2,15 +2,19 @@ import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
 import {validateFeed,validateMatchFeed} from './club-feed.mjs';
 import type {ClubData,Match,MatchFeed} from './club-types';
+import {AWARD_VERSION,awardSnapshots,awardCalendarWeek} from './derived-awards.ts';
+import type {AwardSnapshot,AwardMember} from './derived-awards.ts';
 class SyncFailure extends Error {
  code:string;endpoint?:string;
  constructor(code:string,endpoint?:string){super(code);this.code=code;this.endpoint=endpoint}
 }
+type StoredAward={week:string;version:string;chunks:string[]};
 type Attendance={player:string;status:'yes'|'maybe'|'no';updatedAt:string};
 export class ClubStore {
  state:DurableObjectState;
  ready:Promise<void>;
  syncing:Promise<ClubData>|null=null;
+ awardNotice="";
  constructor(state:DurableObjectState){
   this.state=state;
   this.ready=state.blockConcurrencyWhile(async()=>{
@@ -19,7 +23,46 @@ export class ClubStore {
     for(const match of uniqueMatches(snapshot.matches))records['match:'+match.matchId]=match;
     await state.storage.put(records);
    }
+   if(await state.storage.get('awardVersion')!==AWARD_VERSION){
+    try{
+    const records=await state.storage.list<Match>({prefix:'match:'});
+    const latest=await this.latestData();
+    await state.storage.transaction(async tx=>{
+     await this.refreshAwards(tx,[...records.values()],latest.members,await state.storage.get<string>('lastMatchUpdate')||latest.fetchedAt);
+     await tx.put('awardVersion',AWARD_VERSION);
+    });
+    }catch{
+     this.awardNotice='Unvan arşivi hazırlanamadı; mevcut maç ve katılım kayıtları korunuyor.';
+    }
+   }
   });
+ }
+ async readAwards(storage:Pick<DurableObjectStorage,'list'|'get'>):Promise<AwardSnapshot[]>{
+  const records=await storage.list<StoredAward|AwardSnapshot>({prefix:'award:'});
+  const awards:AwardSnapshot[]=[];
+  for(const record of records.values()){
+   if(!('chunks' in record)){awards.push(record);continue;}
+   const parts=await Promise.all(record.chunks.map(key=>storage.get<string>(key)));
+   if(parts.some(part=>part===undefined))throw Error('Incomplete award snapshot');
+   awards.push(JSON.parse(parts.join('')) as AwardSnapshot);
+  }
+  // Calendar completion is presentation metadata; stored calculations/as-of stay intact even during feed failure.
+  const week=awardCalendarWeek();
+  return awards.map(record=>({...record,report:{...record.report,provisional:record.week===week}}));
+ }
+ async refreshAwards(storage:Pick<DurableObjectStorage,'list'|'get'|'put'|'delete'>,matches:Match[],members:AwardMember[],asOf:string){
+  const old=await this.readAwards(storage);
+  for(const record of await awardSnapshots(matches,members,old,asOf)){
+   // Bounded chunks keep growing revision histories below the SQLite key/value size limit.
+   const text=JSON.stringify(record),key='award:'+record.version+':'+record.week;
+   const previous=await storage.get<StoredAward|AwardSnapshot>(key),chunks:string[]=[];
+   for(let i=0;i<text.length;i+=24000){
+    const chunkKey='award-chunk:'+record.version+':'+record.week+':'+chunks.length;
+    await storage.put(chunkKey,text.slice(i,i+24000));chunks.push(chunkKey);
+   }
+   if(previous&&'chunks' in previous)for(const stale of previous.chunks.filter(k=>!chunks.includes(k)))await storage.delete(stale);
+   await storage.put(key,{week:record.week,version:record.version,chunks} satisfies StoredAward);
+  }
  }
  async latestData():Promise<ClubData>{
   const latest=(await this.state.storage.get<ClubData>('latest'))||{...snapshot,matches:[]};
@@ -46,7 +89,10 @@ export class ClubStore {
     if(legacy)await tx.put('latest',{...data,matches:[]});
     await tx.put('lastMatchUpdate',data.fetchedAt);await tx.put('recentMatchIds',clean.map(m=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
-   });return legacy?data as ClubData:{...(await this.latestData()),mode:'scheduled'};
+    const archive=await tx.list<Match>({prefix:'match:'});
+    await this.refreshAwards(tx,[...archive.values()],legacy?(data as ClubData).members:current.members,data.fetchedAt);
+    await tx.put('awardVersion',AWARD_VERSION);
+   });this.awardNotice='';return legacy?data as ClubData:{...(await this.latestData()),mode:'scheduled'};
   }catch(error){
    const failure={code:error instanceof SyncFailure?error.code:'STORAGE_WRITE_FAILED',endpoint:error instanceof SyncFailure?error.endpoint:undefined,at:new Date().toISOString()};
    console.error('LEO XI sync failed',JSON.stringify(failure));
@@ -68,9 +114,11 @@ export class ClubStore {
   if(url.pathname==='/api/archive'){
    if(request.method!=='GET')return json({error:'Method not allowed'},405);
    const records=await this.state.storage.list<Match>({prefix:'match:'});
+   let awards:AwardSnapshot[]=[],awardNotice=this.awardNotice;
+   try{awards=await this.readAwards(this.state.storage)}catch{awardNotice='Unvan arşivi okunamadı; maç arşivi gösterilmeye devam ediyor.';}
    const lastMatchUpdate=await this.state.storage.get<string>('lastMatchUpdate')||(await this.latestData()).fetchedAt;
    const error=await this.state.storage.get('syncError');const stale=Date.now()-Date.parse(lastMatchUpdate)>36*60*60*1000;
-   return json({matches:uniqueMatches([...records.values()]),startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
+   return json({matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
   }
   if(url.pathname==='/api/attendance'){
    const day=url.searchParams.get('date')||amsterdamDay();if(!validDay(day))return json({error:'Geçerli bir tarih seç.'},400);

@@ -1,0 +1,157 @@
+.awardCards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+.awardGroup {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+.awardGroup > .weeklyCard {
+  width: 100%;
+}
+.awardCards .weeklyNames {
+  max-height: none;
+}
+.awardCards .weeklyNames button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.awardJoke {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.awardDerived {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.awardEvidence {
+  padding-left: 17px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.awardPeriod {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 4px 0;
+}
+.awardIndex {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 8px 0 14px;
+}
+.awardDetail {
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.7;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin: 0 0 12px;
+}
+.awardDetail summary,
+.awardAudit summary,
+.awardArchive summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  min-height: 32px;
+}
+.awardDetail p,
+.awardDetail td,
+.awardDetail th {
+  overflow-wrap: anywhere;
+}
+.awardDetail pre {
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 11px;
+}
+.awardDetail table {
+  min-width: 600px;
+  font-size: 11px;
+}
+.awardDetail th,
+.awardDetail td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.awardDetail caption {
+  text-align: left;
+  padding: 10px 0;
+}
+.awardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+.awardActions button,
+.awardAudit > button,
+.awardDetail button {
+  background: var(--panel);
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-height: 38px;
+}
+.awardAllLink {
+  color: var(--accent);
+  display: inline-block;
+  padding: 14px 0 6px;
+  font-weight: 600;
+}
+.teamTitles > .bodyText {
+  margin: 12px 0 24px;
+}
+.teamTitles > .formLabel {
+  margin: 24px 0 16px;
+  max-width: 480px;
+}
+.teamTitles .awardCasper,
+.teamTitles .awardAudit,
+.teamTitles .awardArchive {
+  margin: 24px 0;
+}
+.awardArchive > details {
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.awardArchive .awardCards {
+  margin: 16px 0;
+}
+@media (max-width: 1000px) {
+  .awardCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 580px) {
+  .awardCards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .awardCards .weeklyCard {
+    padding: 20px;
+  }
+  .awardJoke,
+  .awardEvidence,
+  .awardDetail {
+    font-size: 13px;
+  }
+  .awardActions button,
+  .awardDetail summary {
+    min-height: 44px;
+  }
+  .weeklyHeading {
+    flex-wrap: wrap;
+  }
+}

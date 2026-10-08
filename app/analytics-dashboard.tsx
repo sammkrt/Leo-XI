@@ -18,6 +18,7 @@ import {
   X,
   Printer,
   Download,
+  Trophy,
 } from "lucide-react";
 import {
   useLocationSearch,
@@ -81,6 +82,11 @@ import type {
 import { createRawExport, uniqueRawMatches } from "../lib/club-export";
 import type { Match } from "../lib/club-types";
 
+import TeamTitles, { AwardMap } from './team-titles';
+import { buildAwardReport } from '../lib/derived-awards';
+import type { AwardMember, AwardSnapshot } from '../lib/derived-awards';
+import { awardMapPresets } from '../lib/award-presentation';
+
 const views = [
   ["team", "Takım", BarChart3],
   ["players", "Oyuncular", Users],
@@ -90,12 +96,14 @@ const views = [
   ["matrix", "Oyuncu × maç", Grid3X3],
   ["pairs", "Birlikte oynama", Network],
   ["development", "Gelişim", TrendingUp],
+  ["titles", "Takımın unvanları", Trophy],
 ] as const;
 const scopeLabels: Record<AnalyticsScope, string> = {
   all: "Tüm kayıtlı maçlar",
   match: "Tek maç",
   session: "Seans / maç gecesi",
   week: "Takvim haftası",
+  last7: "Son 7 gün",
   month: "Takvim ayı",
   last5: "Son 5 maç",
   last10: "Son 10 maç",
@@ -300,9 +308,19 @@ function JournalEditor({
 export default function AnalyticsDashboard({
   matches,
   onMatch,
+  members = [],
+  asOf = "",
+  rosterAsOf = "",
+  awards = [],
+  awardNotice = "",
 }: {
   matches: Match[];
   onMatch: (id: string) => void;
+  members?: AwardMember[];
+  asOf?: string;
+  rosterAsOf?: string;
+  awards?: AwardSnapshot[];
+  awardNotice?: string;
 }) {
   const search = useLocationSearch(),
     rawFilters = useMemo(() => filtersFromSearch(search), [search]);
@@ -758,6 +776,7 @@ export default function AnalyticsDashboard({
         role="tabpanel"
         aria-labelledby={"analysis-tab-" + filters.view}
       >
+        {filters.view === "titles" && <TeamTitles matches={pool} history={matches} members={members} filters={filters} onPlayer={id=>selectPlayers([id])} onMatch={onMatch} asOf={asOf} rosterAsOf={rosterAsOf} snapshots={awards} archiveNotice={awardNotice}/>}
         {!pool.length ? (
           <section className="panel">
             <p className="empty">
@@ -777,6 +796,8 @@ export default function AnalyticsDashboard({
             )}
             {filters.view === "players" && (
               <PlayerMaps
+                matches={pool}
+                members={members}
                 report={report}
                 onSelect={selectPlayers}
                 selected={focusedId}
@@ -869,7 +890,7 @@ export default function AnalyticsDashboard({
             <tbody>
               {report.dictionary.map((m) => {
                 return (
-                  <tr key={m.id}>
+                  <tr key={m.level+":"+m.id}>
                     <th>
                       {m.label}
                       <small>
@@ -943,10 +964,14 @@ function playerPoints(
 }
 function PlayerMaps({
   report,
+  matches,
+  members,
   onSelect,
   selected,
 }: {
   report: AnalyticsReport;
+  matches: Match[];
+  members: AwardMember[];
   onSelect: (ids: string[]) => void;
   selected?: string;
 }) {
@@ -980,9 +1005,12 @@ function PlayerMaps({
       yId,
       report.filters.minAttempts,
     );
+  const awardReport = useMemo(()=>buildAwardReport(matches,members,{playerIds:report.filters.playerIds,role:report.filters.role}),[matches,members,report.filters.playerIds,report.filters.role]);
+  const isAward = preset.startsWith("award-");
   return (
     <>
-      <ChartCard
+      {isAward && <><label className="formLabel">Oyuncu haritası<select aria-label="Oyuncu haritası" value={preset} onChange={e=>setPreset(e.target.value)}>{[...scatterPresets,...awardMapPresets].map(p=><option key={p.id} value={p.id}>{p.label}</option>)}<option value="custom">Kendi grafiğini oluştur</option></select></label><AwardMap report={awardReport} preset={preset} onSelect={onSelect}/></>}
+      {!isAward && <ChartCard
         exportable
         title={preset === "custom" ? "Kendi haritan" : active.label}
         question="OYUNCULARIN GÖREV PROFİLLERİ NASIL AYRIŞIYOR?"
@@ -1014,6 +1042,7 @@ function PlayerMaps({
                   {p.label}
                 </option>
               ))}
+              {awardMapPresets.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
               <option value="custom">Kendi grafiğini oluştur</option>
             </select>
           </label>
@@ -1067,7 +1096,7 @@ function PlayerMaps({
             </span>
           ))}
         </div>
-      </ChartCard>
+      </ChartCard>}
       <ChartCard
         title="Bireysel veriler"
         question="HANGİ SAYININ KAÇ GEÇERLİ KAYDI VAR?"
@@ -2480,6 +2509,8 @@ function DevelopmentView({
         />
       </ChartCard>
       <PlayerMaps
+        matches={matches.filter(m=>report.matchIds.includes(String(m.matchId)))}
+        members={[]}
         report={report}
         selected={player.id}
         onSelect={(ids) => {
