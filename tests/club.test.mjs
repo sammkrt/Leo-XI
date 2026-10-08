@@ -1,4 +1,5 @@
 import {locationFromSearch,routeSearch} from '../lib/club-routes.ts';
+import {weeklyCards} from '../lib/weekly-cards.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import snapshot from '../data/snapshot.json' with {type:'json'};
@@ -428,4 +429,34 @@ test('analytics defaults are omitted and every view survives direct URL parsing'
 });
 test('unknown routes and malformed match identifiers are rejected',()=>{
  for(const path of ['/unknown','/kadro/extra','/analiz/unknown','/analiz/mac/invalid','/analiz/mac/12/extra','/analiz/seans/a%2Fb','/analiz/%zz'])assert.equal(routeSearch(path),null,path);
+});
+
+
+test('weekly cards count only last seven days, deduplicate matches and include absent roster members',()=>{
+ const now=Date.parse('2026-10-08T12:00:00Z');const members=[{name:'a',proName:'A'},{name:'b',proName:'B'},{name:'c',proName:'C'}];
+ const make=(id,when,players)=>({...structuredClone(snapshot.matches[0]),matchId:id,timestamp:when/1000,players:{'79638':players}});
+ const row=(playername,shots,goals,assists,passattempts,passesmade)=>({playername,shots,goals,assists,passattempts,passesmade});
+ const recent=make('123',now-1000,{one:row('a','10','2','3','20','12'),two:row('b','7','1','1','10','8')});
+ const old=make('124',now-8*86400000,{two:row('b',100,0,100,100,0)});const future=make('125',now+1000,{two:row('b',100,0,100,100,0)});
+ const result=weeklyCards([recent,recent,old,future],members,now);
+ assert.equal(result.washing.value,8);assert.deepEqual(result.washing.players,[members[0]]);assert.equal(result.potato.value,8);assert.equal(result.carrying.value,5);assert.equal(result.absent.value,0);assert.deepEqual(result.absent.players,[members[2]]);
+});
+test('weekly cards share titles on ties and never fabricate awards for empty weeks',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'a',proName:'A'},{name:'b',proName:'B'}];
+ const match={...snapshot.matches[0],players:{'79638':{a:{playername:'a',shots:5,goals:1,assists:2,passattempts:10,passesmade:5},b:{playername:'b',shots:5,goals:1,assists:2,passattempts:10,passesmade:5}}}};
+ const result=weeklyCards([match],members,now);for(const card of Object.values(result))assert.deepEqual(card.players,members);
+ assert.deepEqual(weeklyCards([match],members,now+8*86400000),{washing:null,potato:null,absent:null,carrying:null});
+ assert.equal(weeklyCards([{...match,players:{}}],members,now).absent,null);
+});
+test('weekly card metrics independently reject missing and contradictory counters',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'a',proName:'A'},{name:'b',proName:'B'}];
+ const match={...snapshot.matches[0],players:{'79638':{a:{playername:'a',shots:'',goals:1,assists:2,passattempts:1,passesmade:9},b:{playername:'b',shots:4,goals:1,assists:null,passattempts:10,passesmade:7}}}};
+ const result=weeklyCards([match],members,now);assert.deepEqual(result.washing.players,[members[1]]);assert.deepEqual(result.potato.players,[members[1]]);assert.deepEqual(result.carrying.players,[members[0]]);
+ const second={...match,matchId:'123456',players:{'79638':{b:{playername:'b',goals:0,assists:0}}}};
+ const incomplete=weeklyCards([match,second],members,now);assert.equal(incomplete.washing,null);assert.equal(incomplete.potato,null);
+});
+test('weekly cards follow stable player IDs across username changes',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000;const members=[{name:'current',proName:'Current'}];const row=name=>({playername:name,shots:3,goals:1,assists:1,passattempts:10,passesmade:8});
+ const latest={...snapshot.matches[0],players:{'79638':{stable:row('current')}}};const older={...latest,matchId:'1234567',timestamp:latest.timestamp-3600,players:{'79638':{stable:row('old-name')}}};
+ const result=weeklyCards([older,latest],members,now);assert.equal(result.absent.value,2);assert.equal(result.washing.value,4);assert.equal(result.carrying.value,4);
 });

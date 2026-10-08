@@ -128,3 +128,7 @@ Günlük ve push çalışmaları yalnız çalışan yöntemi kullanır. Actions 
 ## Performans laboratuvarı
 
 Analiz sekmesi kayıtlı maçları takım, oyuncu, maç, seans ve gelişim görünümlerinde inceler. Filtreli CSV/JSON, tam ham arşiv JSON ve tarayıcı PDF raporu sunar. Eksik veri ve örneklem sınırları için [analiz sözleşmesine](docs/ANALYTICS.md) bakın.
+
+## Haftanın kartları
+
+Ana sayfadaki dört küçük kart son 7 günlük kayıtlı maçlardan hesaplanır: Çamaşır Makinesi (şut − gol), Patates (denenen − başarılı pas), En Gayi (güncel kadroda en az kayıtlı maç) ve Eşek Yükü (gol + asist). Eşitlikte tüm oyuncular gösterilir. Kadro üyesinin hiç görünmemesi 0 kayıtlı maç sayılır; hiç oyuncu kaydı olmayan haftada unvan verilmez. Eksik veya tutarsız sayaçlar sıfır kabul edilmez; bir oyuncunun ilgili metriği tüm haftalık görünümlerinde geçerli değilse o metrik için unvan adayı yapılmaz. Golsüz şut, kaçan net fırsat anlamına gelmez. Eski büyük Haftanın Oyuncusu kartı kaldırılmıştır.
