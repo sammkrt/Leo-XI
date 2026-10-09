@@ -74,3 +74,7 @@ footer{border-color:var(--line);color:var(--muted)}footer strong{color:var(--tex
 .avatar.playerPortrait{position:relative;overflow:hidden;flex-shrink:0;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .profileIdentity{display:flex;align-items:center;gap:18px;margin:16px 0}.profileIdentity h2{margin:0}.avatar.profilePortrait{width:88px;height:88px;border-radius:12px}
 .weeklyNames button{display:flex;align-items:center;gap:9px;max-width:100%;text-align:left}.weeklyNames button>span:last-child{min-width:0;overflow-wrap:anywhere}.weeklyNames .avatar.small{width:32px;height:32px}.weeklyNames{max-height:100px}
+
+/* Long navigation labels must not squeeze their icons out of view. */
+.tabs :is(button,a) svg { flex-shrink: 0; }
+.tabs :is(button,a) > span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
