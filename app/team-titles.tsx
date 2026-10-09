@@ -30,90 +30,9 @@ import { roles, roleColors, scopeOptions } from "../lib/club-analytics";
 import type { AnalyticsFilters } from "../lib/club-analytics";
 import type { Match } from "../lib/club-types";
 
-function AwardDetail({
-  result,
-  candidate,
-  report,
-  onMatch,
-}: {
-  result: AwardResult;
-  candidate: AwardCandidate;
-  report: AwardReport;
-  onMatch: (id: string) => void;
-}) {
-  const def = result.definition;
-  return (
-    <details className="awardDetail">
-      <summary>Neden kazandı?</summary>
-      <div>
-        <p>{def.formula}</p>
-        {def.id.startsWith("new-")&&<p className="footnote">Bileşik davranış endeksi: özellikler diğer uygun rol arkadaşlarının ortalamasına 3 maç önseliyle yaklaştırılır; aynı rolde 4 aday yoksa takım referansı kullanılır. Her ağırlık sabittir; eksik bileşende ağırlık dağıtılmaz. Denetimde ham E kodları ve aynı kapsamdaki toplamlar görünür.</p>}
-        <p className="footnote" hidden={!!def.totalField||def.id.startsWith("new-")}>
-          {report.version} / {def.variant}. adjRate = (başarı + k ×
-          baseline)/(deneme + k). adjMatch = (sayı + {report.rules.priorMatches}{" "}
-          × baseline)/(M + {report.rules.priorMatches}). Priorlar
-          değiştirilebilir ürün parametreleridir.
-        </p>
-        <p>
-          <strong>Ortak kapsam:</strong> {candidate.M}/{candidate.available}{" "}
-          oyuncu-maç · {candidate.roles.map((r) => roles[r]).join(" / ")}.
-          Başlangıç eşikleri: M≥
-          {Math.max(report.rules.minMatches, def.thresholds.M || 0)};{" "}
-          {Object.entries(def.thresholds)
-            .filter(([k]) => k !== "M")
-            .map(([k, v]) => `${k}≥${v}`)
-            .join(", ")}
-          {Object.entries(def.max || {}).map(([k, v]) => `; ${k}≤${v}`)}. En az{" "}
-          {report.rules.minCandidates} uygun aday.
-        </p>
-        <div className="tableWrap">
-          <table>
-            <caption>Ham değer, düzeltme ve ağırlıklar</caption>
-            <thead>
-              <tr>
-                <th>Bileşen</th>
-                <th>Ham pay/payda</th>
-                <th>Ham</th>
-                <th>Düzeltilmiş</th>
-                <th>Baseline</th>
-                <th>Prior</th>
-                <th>P (0–1)</th>
-                <th>Ağırlık</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidate.components.map((c) => (
-                <tr key={c.key}>
-                  <td>{c.label}</td>
-                  <td>
-                    {numberLabel(c.numerator)}/{numberLabel(c.denominator)}
-                  </td>
-                  <td>{numberLabel(c.raw, 4)}</td>
-                  <td>{numberLabel(c.adjusted, 4)}</td>
-                  <td>{numberLabel(c.baseline, 4)}</td>
-                  <td>{c.prior}</td>
-                  <td>{numberLabel(c.percentile, 4)}</td>
-                  <td>{numberLabel(c.weight)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {candidate.components
-          .filter((c) => c.references.length)
-          .map((c) => (
-            <p className="footnote" key={c.key}>
-              <strong>{c.label} referansı:</strong>{" "}
-              {c.references
-                .map(
-                  (b) =>
-                    `${roles[b.role]} → ${b.scope === "same-role" ? "aynı rol" : "genel takım"}; ${b.peers} başka oyuncu, ${b.observations} geçerli kayıt, payda ${numberLabel(b.attempts)}, değer ${numberLabel(b.value, 4)}, rol ağırlığı ${numberLabel(b.weight, 4)}`,
-                )
-                .join(" | ")}
-              . Oyuncunun kendi kayıtları referanstan çıkarıldı.
-            </p>
-          ))}
-        {def.id === "potato" && <p>{candidate.context}</p>}
+function AwardDetail({result}:{result:AwardResult}) {
+  const def=result.definition;
+  return <details className="awardDetail"><summary>Neden kazandı?</summary>
         <div className="tableWrap">
           <table>
             <caption>
@@ -147,67 +66,13 @@ function AwardDetail({
             </tbody>
           </table>
         </div>
-        <p className="footnote" hidden={!!def.totalField||def.id.startsWith("new-")}>
-          P uygun takım adayları arasında eşit değerlerde orta sıradır; olasılık
-          veya güven değildir. Eşitlik toleransı{" "}
-          {report.rules.equalityTolerance}; lider farkı en az{" "}
-          {report.rules.minIndexGap} ve toplam endeks aralığı en az{" "}
-          {report.rules.minIndexSpread} puan; türetilmiş değerler için göreli
-          fark tabanı {report.rules.minRelativeDifference} × max(1, |değerler|).
-          Tam eşit liderler unvanı paylaşır; çok küçük farkta net kazanan
-          yoktur.
-        </p>
-        <details>
-          <summary>Ham sayaçlar ve kapsam denetimi</summary>
-          <pre>{JSON.stringify(candidate.totals, null, 2)}</pre>
-          <div className="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Maç</th>
-                  <th>Kayıtlı insan</th>
-                  <th>İnsan gol</th>
-                  <th>İnsan şut</th>
-                  <th>İnsan G+A</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidate.sourceTotals.map((s) => (
-                  <tr key={s.matchId}>
-                    <td>{s.matchId}</td>
-                    <td>{s.humanPlayers}</td>
-                    <td>{numberLabel(s.goals)}</td>
-                    <td>{numberLabel(s.shots)}</td>
-                    <td>{numberLabel(s.contributions)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
-        <div className="sourceLinks">
-          {candidate.matchIds.map((id) => (
-            <button key={id} onClick={() => onMatch(id)}>
-              Kaynak maç #{id}
-            </button>
-          ))}
-        </div>
-        <p>
-          <strong>Neyi ölçmez?</strong> {def.limitation}
-        </p>
-        <p className="footnote">
-          Veri tarihi: {report.asOf}. {report.coverage}
-        </p>
-      </div>
-    </details>
-  );
+  </details>;
 }
 function TitleCard({
   result,
   candidate,
   report,
   onPlayer,
-  onMatch,
   shared = [],
 }: {
   result: AwardResult;
@@ -241,30 +106,7 @@ function TitleCard({
       <p className="awardJoke">{c.joke}</p>
       <p className="awardDerived">{c.value}</p>
       <p className="awardPeriod">{c.period} · {c.matches} maç{shared.length>0?' · ortak unvan':''}</p>
-      <div className="awardCardDetails">
-      <AwardDetail
-        result={result}
-        candidate={candidate}
-        report={report}
-        onMatch={onMatch}
-      />
-      {shared.map((person) => {
-        const other = awardCardContent(result, person, report);
-        return (
-          <details className="awardDetail" key={person.playerId}>
-            <summary>{person.proName} · paylaşılan unvanın kanıtı</summary>
-            <p>{other.value}</p>
-            <p>{other.evidence.join(" · ")}</p>
-            <AwardDetail
-              result={result}
-              candidate={person}
-              report={report}
-              onMatch={onMatch}
-            />
-          </details>
-        );
-      })}
-      </div>
+      <div className="awardCardDetails"><AwardDetail result={result}/></div>
     </article>
   );
 }
