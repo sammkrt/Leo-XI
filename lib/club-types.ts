@@ -43,6 +43,7 @@ export type ClubData = {
 };
 
 export type MatchFeed = {
+  clubSnapshot?: ClubData;
   research?: ResearchContext;
   clubId: string;
   matchType: string;

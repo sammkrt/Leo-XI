@@ -169,3 +169,5 @@ Ana sayfa kazananı bulunan tüm unvanları gösterir; kategori başına seçim 
 38 yeni kart mevcut unvan motoruna eklendi. Kazananlar aynı sade ana sayfa kartlarında görünür. A01/A06 kısmi E123 doğrulamasını, A36–A38 bağımsız deneysel doğrulamayı bekler. Sezon/kulüp kartları güncel endpoint bağlamını bekler; kalan kartlar normal veri/aday eşiklerine tabidir. `data/new-award-specs.json` özgün şartname, `lib/new-award-formulas.ts` tipli formüller, `lib/new-awards.ts` kapsam/sıralama kontrolleridir.
 
 Gece toplayıcısı sekiz EA endpoint'ini ve son rakiplerin SR değerlerini alır. Maç kaynağı zorunlu, diğer kaynaklar opsiyoneldir. Kaynak hataları mevcut arşivi silmez. SR kayıtları `/api/archive` içindeki `ratings`, yeni kaynak bağlamı `/api/club` içindeki `research` alanından sunulur.
+
+Maç koleksiyonundaki başarılı `allTimeLeaderboard/search`, `clubs/overallStats` ve `members/stats` yanıtları tam ve tutarlıysa Worker aynı senkronizasyonda kulüp/kadro toplamlarını da günceller. Kısaltılmış araştırma kadrosu kulüp kadrosunun yerine kullanılmaz. Eksik, tutarsız veya daha eski toplamlar mevcut kaydı değiştirmez; geçerli maçlar arşive alınmaya devam eder.

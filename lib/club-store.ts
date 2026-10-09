@@ -88,13 +88,15 @@ export class ClubStore {
    const current=await this.latestData();
    const matchTime=await this.state.storage.get<string>('lastMatchUpdate')||current.fetchedAt;
    if(Date.parse(data.fetchedAt)<Date.parse(matchTime))throw new SyncFailure('FEED_OLDER_DATA');
+   const candidate=legacy?data as ClubData:(data as MatchFeed).clubSnapshot;
+   const totals=candidate&&Date.parse(candidate.fetchedAt)>=Date.parse(current.fetchedAt)?candidate:null;
    await this.state.storage.transaction(async(tx)=>{
     if(data.research){await tx.put('research',data.research);for(const rating of data.research.ratings)await tx.put('rating:'+rating.clubId+':'+rating.observedAt,rating);}
-    if(legacy)await tx.put('latest',{...data,matches:[]});
+    if(totals)await tx.put('latest',{...totals,club:{...current.club,...totals.club},matches:[]});
     await tx.put('lastMatchUpdate',data.fetchedAt);await tx.put('recentMatchIds',clean.map(m=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
     const archive=await tx.list<Match>({prefix:'match:'});
-    await this.refreshAwards(tx,[...archive.values()],legacy?(data as ClubData).members:current.members,data.fetchedAt);
+    await this.refreshAwards(tx,[...archive.values()],totals?.members||current.members,data.fetchedAt);
     await tx.put('awardVersion',AWARD_VERSION);
    });this.awardNotice='';return legacy?data as ClubData:{...(await this.latestData()),mode:'scheduled'};
   }catch(error){

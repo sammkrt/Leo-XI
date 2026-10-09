@@ -726,3 +726,18 @@ test('opponent SR observations persist across refreshes and restarts without rew
   globalThis.fetch=mockEA();await store.sync();assert.equal((await json(store,'/api/archive')).data.ratings.length,1);assert.equal((await json(store,'/api/club')).data.research.ratings[0].skillRating,1900);
  }finally{globalThis.fetch=previous;}
 });
+
+test('complete collection updates club totals and roster without resetting the match archive',async()=>{
+ const previous=globalThis.fetch;try{
+ const s=state(),store=new ClubStore(s);await store.ready;
+ const when=new Date().toISOString(),research={version:1,observedAt:when,ratings:[],endpoints:['allTimeLeaderboard/search','clubs/overallStats','members/stats'].map(endpoint=>({endpoint,status:'ok',observedAt:when})),allTime:{...snapshot.club,gamesPlayed:'101',wins:'57',losses:'35',ties:'9',goals:'284',goalsAgainst:'198'},overall:{...snapshot.overall,gamesPlayed:'101',wins:'57',losses:'35',ties:'9',goals:'284',goalsAgainst:'198'},members:structuredClone(snapshot.members)};
+ research.members[0].proName='Updated name';
+ const match={...snapshot.matches[0],matchId:'987654321'};
+ const feed={clubId:'79638',matchType:'leagueMatch',matches:[match],fetchedAt:when,research};
+ globalThis.fetch=async()=>Response.json(feed);await store.sync();
+ let club=(await json(store,'/api/club')).data;assert.equal(club.overall.gamesPlayed,'101');assert.equal(club.overall.goals,'284');assert.equal(club.fetchedAt,when);assert.equal(club.members[0].proName,'Updated name');assert.ok(club.members[0].passSuccessRate);assert.equal((await json(store,'/api/archive')).data.matches.length,11);
+ for(const invalid of [{...research,members:[{name:'Only partial'}]},{...research,overall:{...research.overall,goals:'999'}},{...research,allTime:{...research.allTime,clubId:'123'}},{...research,observedAt:snapshot.fetchedAt}]){
+ globalThis.fetch=async()=>Response.json({...feed,research:invalid});await store.sync();club=(await json(store,'/api/club')).data;assert.equal(club.fetchedAt,when);assert.equal(club.overall.goals,'284');assert.equal(club.members[0].proName,'Updated name');
+ }
+ }finally{globalThis.fetch=previous}
+});
