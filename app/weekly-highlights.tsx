@@ -40,6 +40,8 @@ export default function WeeklyHighlights({
       <AwardCards
         report={report}
         compact
+        playerOptions={members}
+        firstCardPlayers={ghost?.players.map(p=>p.name)||[]}
         firstCard={ghost?<WeeklyGhost result={ghost} onPlayer={person=>{const member=members.find(m=>m.name===person.name);if(member)onPlayer(member);}}/>:undefined}
         onPlayer={(id) => {
           const result = report.results

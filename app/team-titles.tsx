@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import {awardTone} from "../lib/award-tone";
 import PlayerAvatar from "./player-avatar";
 import MatchReport from "./analytics-report";
 import {
@@ -218,7 +219,7 @@ function TitleCard({
 }) {
   const c = awardCardContent(result, candidate, report);
   return (
-    <article className={"weeklyCard weeklyCard-" + result.definition.id}>
+    <article className={"weeklyCard awardTone-" + awardTone(result.definition.id) + " weeklyCard-" + result.definition.id}>
       <span className="weeklyIcon" aria-hidden="true">
         {result.definition.icon}
       </span>
@@ -271,25 +272,33 @@ export function AwardCards({
   report,
   compact = false,
   firstCard,
+  firstCardPlayers = [],
+  playerOptions,
   onPlayer,
   onMatch,
 }: {
   report: AwardReport;
   compact?: boolean;
   firstCard?: import("react").ReactNode;
+  firstCardPlayers?: string[];
+  playerOptions?: {name:string;proName:string}[];
   onPlayer: (id: string) => void;
   onMatch: (id: string) => void;
 }) {
-  const selected = compact ? selectHomeAwards(report) : report.results;
+  const [playerFilter,setPlayerFilter]=useState('');
+  const options=playerOptions||[...new Map(report.results.flatMap(r=>r.candidates).map(p=>[p.name,{name:p.name,proName:p.proName}])).values()];
+  const selected = (compact ? selectHomeAwards(report) : report.results).filter(r=>!playerFilter||r.winners.some(p=>p.name===playerFilter));
+  const firstVisible=!playerFilter||firstCardPlayers.includes(playerFilter);
   return (
+    <><div className="awardFilterBar"><label>Oyuncu<select aria-label="Kartları oyuncuya göre filtrele" value={playerFilter} onChange={e=>setPlayerFilter(e.target.value)}><option value="">Tüm oyuncular</option>{options.map(p=><option key={p.name} value={p.name}>{p.proName} · {p.name}</option>)}</select></label><button type="button" onClick={()=>setPlayerFilter('')} disabled={!playerFilter}>Filtreleri temizle</button><span>Yeşil: olumlu · Kırmızı: olumsuz</span></div>
     <div className="weeklyCards awardCards">
-      {firstCard}
+      {firstCard&&<div className="awardFirstSlot" hidden={!firstVisible}>{firstCard}</div>}
       {selected.map((result) => (
         <div className="awardGroup" key={result.definition.id}>
           {result.winners.length ? (
-            [result.winners[0]].map((c) => (
+            [playerFilter?result.winners.find(p=>p.name===playerFilter)!:result.winners[0]].map((c) => (
               <TitleCard
-                shared={result.winners.slice(1)}
+                shared={result.winners.filter(p=>p.playerId!==c.playerId)}
                 key={c.playerId}
                 result={result}
                 candidate={c}
@@ -326,13 +335,12 @@ export function AwardCards({
           )}
         </div>
       ))}
-      {compact && !selected.length && (
+      {!selected.length && (!firstCard||!firstVisible) && (
         <p className="empty">
-          Bu dönem net kazanan yok. Yeterli ortak veri ve en az dört uygun aday
-          bekleniyor.
+          {playerFilter?"Bu oyuncunun bu dönemde kazandığı kart yok.":"Bu dönem net kazanan yok. Yeterli ortak veri bekleniyor."}
         </p>
       )}
-    </div>
+    </div></>
   );
 }
 export function AwardMap({
