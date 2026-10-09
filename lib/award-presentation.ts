@@ -18,6 +18,8 @@ export function awardCardContent(
     string,
     () => { value: string; evidence: [string, string] }
   > = {
+    asabi: () => ({value: `${t.F} faul yaptı`,evidence:[`${candidate.M} maç`,`Maç başına ${fmt(t.F/candidate.M)} faul`]}),
+    gariban: () => ({value: `${t.FW} kez faul yapıldı`,evidence:[`${candidate.M} maç`,`Maç başına ${fmt(t.FW/candidate.M)} faul kazandı`]}),
     washing: () => ({
       value: `%${fmt(100 * component.adjusted)} düzeltilmiş golsüz şut`,
       evidence: [`${t.S} şutun ${t.waste}’i gol olmadı`, `${t.G} gol`],

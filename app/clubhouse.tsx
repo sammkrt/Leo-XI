@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useMemo,useState,useSyncExternalStore} from 'react';
-import {Activity,BarChart3,ArrowUpRight,CalendarDays,Check,ChevronRight,Clock,GitCompareArrows,Search,Shield,Trophy,Users,X} from 'lucide-react';
+import {FlaskConical,Activity,BarChart3,ArrowUpRight,CalendarDays,Check,ChevronRight,Clock,GitCompareArrows,Search,Shield,Trophy,Users,X} from 'lucide-react';
 import PlayerAvatar from './player-avatar';
 import TeamLab from './team-lab';
 import WeeklyHighlights from './weekly-highlights';
@@ -18,7 +18,7 @@ import type {Player,Match,MatchPlayer,ClubData} from '../lib/club-types';
 type Archive={awardNotice?:string;awards?:AwardSnapshot[];matches:Match[];persistent:boolean;startedAt?:string;lastSync?:string;lastMatchUpdate?:string;notice?:string};
 type Entry={player:string;status:'yes'|'maybe'|'no';updatedAt:string};
 const positions:Record<string,string>={forward:'Forvet',midfielder:'Orta saha',defender:'Defans',goalkeeper:'Kaleci'};
-const tabs=[['Genel bakış',Activity],['Maçlar',Trophy],['Analiz',BarChart3],['Takım Laboratuvarı',Activity],['Rövanş defteri',Trophy],['Kadro',Users],['Karşılaştır',GitCompareArrows],['Maç gecesi',CalendarDays]] as const;
+const tabs=[['Genel bakış',Activity],['Maçlar',Trophy],['Analiz',BarChart3],['Takım Laboratuvarı',FlaskConical],['Rövanş defteri',Trophy],['Kadro',Users],['Karşılaştır',GitCompareArrows],['Maç gecesi',CalendarDays]] as const;
 const stamp=(value:string|number)=>new Date(typeof value==='number'?value*1000:value).toLocaleString('tr-TR',{timeZone:'Europe/Amsterdam',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 const dateOnly=(value:number)=>new Date(value*1000).toLocaleDateString('tr-TR',{timeZone:'Europe/Amsterdam',day:'2-digit',month:'short'});
 const fixed=(value:number,n=2)=>Number.isFinite(value)?value.toFixed(n):'—';

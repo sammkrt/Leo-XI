@@ -9,7 +9,7 @@ import {
 } from "./club-export.ts";
 import type { Match } from "./club-types";
 
-export const AWARD_VERSION = "leo-titles-v1";
+export const AWARD_VERSION = "leo-titles-v2";
 export const awardRules = {
   minCandidates: 4,
   minMatches: 3,
@@ -43,6 +43,8 @@ type ComponentSpec = {
 type Thresholds = Record<string, number>;
 export type AwardDefinition = {
   id: string;
+  totalField?: string;
+  unavailableReason?: string;
   title: string;
   icon: string;
   category: AwardCategory;
@@ -111,7 +113,20 @@ const definition = (
   max,
 });
 /** Product rules, not a scientific player-quality model. Missing components never redistribute weights. */
+export const pendingBanterCards = [
+ {id:'provoker',title:'Kudurtucu',icon:'🤬',joke:'Rakibin sinir ayarları fabrika çıkışına döndü.',formula:'Oyuncunun rakibe gördürdüğü kart toplamı',reason:'Rakip kartını hangi oyuncunun aksiyonuyla aldığına bağlayan olay verisi yok. Kazanılan faul, kart gördürme sayılmaz.'},
+ {id:'defense-chaos',title:'Defans Siken',icon:'🚧',joke:'Kendi kalemize hızlı teslimat.',formula:'Kendi yarı sahasında benzersiz top kaybı + pas hatası',reason:'Bölgesel kayıplar saha üçte birliklerine ait; yarı saha veya pas hatasının gerçekleştiği bölge bilinmiyor. Kayıp ile pas hatası da örtüşebilir; toplamak aynı olayı iki kez sayabilir.'},
+ {id:'attack-chaos',title:'Hücum Siken',icon:'🧯',joke:'Atağı rakipten önce söndürdü.',formula:'Rakip yarı sahasında benzersiz top kaybı + pas hatası',reason:'Hücum üçte biri rakip yarı sahası değildir. Pas hatasının bölgesi ve top kaybıyla örtüşmesi bilinmiyor.'},
+ {id:'butterfly',title:'Narin Kelebeği',icon:'🦋',joke:'Hava trafiğine nazikçe yol verdi.',formula:'En düşük kazanılan hava topu / hava topu denemesi',reason:'Kazanılan hücum ve savunma hava topları var (265/266); toplam deneme veya kaybedilen hava topu sayısı yok. Sıfır galibiyet, sıfır başarı oranı değildir.'},
+ {id:'grenade',title:'El Bombası',icon:'💣',joke:'Pimi çekti, savunmaya bıraktı.',formula:'Kendi ceza sahasında top kaybı toplamı',reason:'Savunma üçte birindeki top kaybı ceza sahası içindeki kayıp değildir. Konum verisi yok.'},
+ {id:'saban',title:'Şaban',icon:'🎬',joke:'Final sahnesinde top senaryodan çıktı.',formula:'Rakip ceza sahasında top kaybı toplamı',reason:'Hücum üçte birindeki top kaybı rakip ceza sahası içindeki kayıp değildir. Konum verisi yok.'},
+] as const;
+
 export const awardRegistry: AwardDefinition[] = [
+  {...definition('asabi','Asabi','😤','defense','Top bahane, temas şahane.',['F'],{},[raw('F','Yapılan faul toplamı',1)],'Σ(E2 + E3); en yüksek toplam, eşitlikte ortak unvan','En az 3 kayıtlı maç; oyuncunun ilgili dönemdeki tüm görünümlerinde geçerli faul verisi gerekir. Toplam hacimdir, maç başına oran değildir.'),totalField:'F'},
+  {...definition('gariban','Gariban','🩹','style','Topu aldı, dayağı da pakete eklediler.',['FW'],{},[raw('FW','Kazanılan faul toplamı',1)],'Σ(E4); en yüksek toplam, eşitlikte ortak unvan','Kazanılan faul sayısıdır; rakibe kart gördürme veya sakatlık ölçülmez. En az 3 kayıtlı maç ve oyuncunun tüm görünümlerinde geçerli veri gerekir.'),totalField:'FW'},
+  ...pendingBanterCards.map(card=>({...definition(card.id,card.title,card.icon,'style',card.joke,[],{},[],card.formula,card.reason,'unavailable-v1'),unavailableReason:card.reason})),
+
   definition(
     "washing",
     "Çamaşır Makinesi",
@@ -500,6 +515,7 @@ function observations(matches: readonly Match[]): AwardRow[] {
       PF,
       miss,
       F,
+      FW: event(4),
       Y,
       RC,
       I,
@@ -716,6 +732,7 @@ function candidatesFor(
   options: AwardOptions,
   rules: AwardRules,
 ): AwardResult {
+  if(def.unavailableReason)return {definition:def,candidates:[],winners:[],reason:'Hesaplanamıyor: '+def.unavailableReason,excluded:[]};
   const valid = rows.filter((row) =>
     def.fields.every(
       (k) => row.values[k] !== null && row.values[k] !== undefined,
@@ -744,6 +761,7 @@ function candidatesFor(
     );
     const M = sample.length;
     if (!M) continue;
+    if(def.totalField && M !== rows.filter(r=>r.playerId===playerId&&(!options.role||options.role==='all'||r.role===options.role)).length)continue;
     const totals: Counts = { M };
     for (const key of Object.keys(sample[0].values))
       if (
@@ -773,6 +791,7 @@ function candidatesFor(
       recoveryRaw: [totals.R, M],
     };
     const rawValues: Record<string, number | null> = {
+      ...totals,
       ...Object.fromEntries(
         Object.entries(fractions).map(([key, [n, d]]) => [key, divide(n, d)]),
       ),
@@ -870,6 +889,15 @@ function candidatesFor(
         contributions: r.values.teamOutput,
       })),
     });
+  }
+  if(def.totalField){
+    const key=def.totalField;
+    candidates.sort((a,b)=>b.totals[key]-a.totals[key]||a.playerId.localeCompare(b.playerId,'en'));
+    const max=candidates[0]?.totals[key]??0;
+    const reason=candidates.length<rules.minCandidates
+      ? 'En az '+rules.minCandidates+' uygun aday gerekli; '+candidates.length+' aday var.'
+      : max===0?'Bu dönem bu olay kaydedilmedi; unvan verilmedi.':'';
+    return {definition:def,candidates,winners:reason?[]:candidates.filter(c=>c.totals[key]===max),reason,excluded};
   }
   for (const candidate of candidates.length >= rules.minCandidates
     ? candidates
@@ -1007,21 +1035,7 @@ export function buildAwardReport(
 }
 
 export function selectHomeAwards(report: AwardReport): AwardResult[] {
-  const selected: AwardResult[] = [];
-  for (const category of [
-    "attack",
-    "passing",
-    "defense",
-    "contribution",
-    "style",
-    "consistency",
-  ] as AwardCategory[]) {
-    const result = report.results.find(
-      (r) => r.definition.category === category && r.winners.length,
-    );
-    if (result) selected.push(result);
-  }
-  return selected;
+  return report.results.filter(result=>result.winners.length>0);
 }
 export type AwardSnapshot = {
   week: string;

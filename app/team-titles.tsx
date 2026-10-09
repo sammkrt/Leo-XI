@@ -22,48 +22,12 @@ import type {
 } from "../lib/derived-awards";
 import {
   awardCardContent,
-  awardCardSVG,
   awardMapPresets,
   awardCoordinates,
 } from "../lib/award-presentation";
 import { roles, roleColors, scopeOptions } from "../lib/club-analytics";
 import type { AnalyticsFilters } from "../lib/club-analytics";
 import type { Match } from "../lib/club-types";
-
-async function cardPNG(
-  result: AwardResult,
-  candidate: AwardCandidate,
-  report: AwardReport,
-  share: boolean,
-) {
-  const url = URL.createObjectURL(
-    new Blob([awardCardSVG(result, candidate, report)], {
-      type: "image/svg+xml",
-    }),
-  );
-  try {
-    const image = new Image();
-    image.src = url;
-    await image.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth * 2;
-    canvas.height = image.naturalHeight * 2;
-    const context = canvas.getContext("2d");
-    if (!context) throw Error("Canvas kullanılamıyor.");
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    if (!blob) throw Error("PNG oluşturulamadı.");
-    const filename = `leo-xi-${result.definition.id}-${candidate.playerId}-${report.asOf.slice(0, 10)}.png`;
-    const file = new File([blob], filename, { type: "image/png" });
-    if (share && navigator.canShare?.({ files: [file] }))
-      await navigator.share({ files: [file], title: result.definition.title });
-    else downloadFile(blob, filename);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 function AwardDetail({
   result,
@@ -82,7 +46,7 @@ function AwardDetail({
       <summary>Neden kazandı?</summary>
       <div>
         <p>{def.formula}</p>
-        <p className="footnote">
+        <p className="footnote" hidden={!!def.totalField}>
           {report.version} / {def.variant}. adjRate = (başarı + k ×
           baseline)/(deneme + k). adjMatch = (sayı + {report.rules.priorMatches}{" "}
           × baseline)/(M + {report.rules.priorMatches}). Priorlar
@@ -157,7 +121,7 @@ function AwardDetail({
               <tr>
                 <th>Oyuncu / ID</th>
                 <th>Geçerli maç</th>
-                <th>Unvan endeksi</th>
+                <th>{def.totalField ? "Toplam olay" : "Unvan endeksi"}</th>
                 <th>Lidere fark</th>
               </tr>
             </thead>
@@ -168,9 +132,11 @@ function AwardDetail({
                     {c.proName} · #{c.playerId}
                   </td>
                   <td>{c.M}</td>
-                  <td>{numberLabel(c.index, 3)}</td>
+                  <td>{numberLabel(def.totalField ? c.totals[def.totalField] : c.index, 3)}</td>
                   <td>
-                    {c.index === null
+                    {def.totalField
+                      ? numberLabel(result.candidates[0].totals[def.totalField] - c.totals[def.totalField])
+                      : c.index === null
                       ? "—"
                       : numberLabel(result.candidates[0].index! - c.index, 3)}
                   </td>
@@ -179,7 +145,7 @@ function AwardDetail({
             </tbody>
           </table>
         </div>
-        <p className="footnote">
+        <p className="footnote" hidden={!!def.totalField}>
           P uygun takım adayları arasında eşit değerlerde orta sıradır; olasılık
           veya güven değildir. Eşitlik toleransı{" "}
           {report.rules.equalityTolerance}; lider farkı en az{" "}
@@ -249,21 +215,7 @@ function TitleCard({
   onMatch: (id: string) => void;
   shared?: AwardCandidate[];
 }) {
-  const c = awardCardContent(result, candidate, report),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  async function save(share: boolean) {
-    setBusy(true);
-    setError("");
-    try {
-      await cardPNG(result, candidate, report, share);
-    } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError"))
-        setError("Kart indirilemedi. Tarayıcı indirme izinlerini kontrol et.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const c = awardCardContent(result, candidate, report);
   return (
     <article className={"weeklyCard weeklyCard-" + result.definition.id}>
       <span className="weeklyIcon" aria-hidden="true">
@@ -284,36 +236,16 @@ function TitleCard({
           </button>
         ))}
       </div>
-      {shared.length > 0 && (
-        <p className="footnote">
-          Unvan paylaşıldı. Aşağıdaki kanıt: {c.player}.
-        </p>
-      )}
       <p className="awardJoke">{c.joke}</p>
       <p className="awardDerived">{c.value}</p>
-      <ul className="awardEvidence">
-        {c.evidence.map((e) => (
-          <li key={e}>{e}</li>
-        ))}
-      </ul>
-      <p className="awardPeriod">
-        {c.period} · {c.matches} geçerli maç
-      </p>
-      <p className="awardIndex">{c.index}</p>
+      <p className="awardPeriod">{c.period} · {c.matches} maç{shared.length>0?' · ortak unvan':''}</p>
+      <div className="awardCardDetails">
       <AwardDetail
         result={result}
         candidate={candidate}
         report={report}
         onMatch={onMatch}
       />
-      <div className="awardActions">
-        <button disabled={busy} onClick={() => void save(false)}>
-          PNG indir
-        </button>
-        <button disabled={busy} onClick={() => void save(true)}>
-          Paylaş
-        </button>
-      </div>
       {shared.map((person) => {
         const other = awardCardContent(result, person, report);
         return (
@@ -321,28 +253,16 @@ function TitleCard({
             <summary>{person.proName} · paylaşılan unvanın kanıtı</summary>
             <p>{other.value}</p>
             <p>{other.evidence.join(" · ")}</p>
-            <p>
-              {other.index} · {person.M} geçerli maç
-            </p>
             <AwardDetail
               result={result}
               candidate={person}
               report={report}
               onMatch={onMatch}
             />
-            <button
-              onClick={() => {
-                void cardPNG(result, person, report, false).catch(() =>
-                  setError("Kart indirilemedi."),
-                );
-              }}
-            >
-              PNG indir
-            </button>
           </details>
         );
       })}
-      {error && <p role="alert">{error}</p>}
+      </div>
     </article>
   );
 }
@@ -363,9 +283,9 @@ export function AwardCards({
       {selected.map((result) => (
         <div className="awardGroup" key={result.definition.id}>
           {result.winners.length ? (
-            (compact ? [result.winners[0]] : result.winners).map((c) => (
+            [result.winners[0]].map((c) => (
               <TitleCard
-                shared={compact ? result.winners.slice(1) : []}
+                shared={result.winners.slice(1)}
                 key={c.playerId}
                 result={result}
                 candidate={c}
