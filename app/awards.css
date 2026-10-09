@@ -179,3 +179,23 @@
 .ghostCard{border-color:#bcc7fc;background:var(--pale)}.ghostIdentity{display:grid;gap:10px;width:100%;margin:12px 0 20px}.ghostIdentity button{display:flex;align-items:center;gap:12px;background:none;border:0;color:var(--accent);font-weight:600;text-align:left;padding:0;min-height:44px}.ghostWaiting{visibility:hidden}.ghostBackdrop{position:fixed;inset:0;z-index:2000;background:#17203366;display:flex;align-items:center;justify-content:center;padding:20px;transition:background .7s;pointer-events:auto}.ghostReveal{position:relative;width:min(360px,100%);padding:28px;max-height:85dvh;overflow:auto;box-shadow:0 20px 80px #15203f40;transform-origin:top left;transition:transform .7s ease,opacity .7s ease}.ghostReveal h4{font-size:24px}.ghostReveal .ghostIdentity{animation:ghostUnblur 5s ease-out both}.ghostReveal .avatar{width:70px;height:70px}.ghostReveal .ghostIdentity button{font-size:20px}.ghostClose{position:absolute;right:12px;top:10px;border:0;background:none;font-size:28px;color:var(--muted);cursor:pointer;min-width:44px;min-height:44px}.ghost-settle{background:transparent;pointer-events:none}.ghost-settle .ghostReveal{transform:var(--ghost-flight,scale(.6));opacity:0}@keyframes ghostUnblur{0%{filter:blur(20px);opacity:.2}100%{filter:blur(0);opacity:1}}@media(prefers-reduced-motion:reduce){.ghostBackdrop{display:none}.ghostWaiting{visibility:visible}.ghostReveal,.ghostReveal .ghostIdentity{animation:none;transition:none}}
 
 .awardCards .awardTone-positive{background:#eef9f1;border-color:#b6ddc0}.awardCards .awardTone-negative,.awardCards .ghostCard{background:#fff1f1;border-color:#e9bfc1}.awardCards .awardTone-positive h4,.awardCards .awardTone-negative h4{color:#172033}.awardCards .awardTone-positive .awardJoke,.awardCards .awardTone-negative .awardJoke,.awardCards .awardTone-positive .awardPeriod,.awardCards .awardTone-negative .awardPeriod{color:#475569}.awardFilterBar{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;margin:0 0 18px}.awardFilterBar label{display:grid;gap:6px;font-size:13px;font-weight:600;min-width:0;width:min(320px,100%)}.awardFilterBar select{width:100%;min-width:0;min-height:44px;padding:10px 12px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px}.awardFilterBar button{min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--accent)}.awardFilterBar button:disabled{color:var(--muted);opacity:.65}.awardFilterBar>span{font-size:12px;color:#475569;align-self:center}.awardFirstSlot{display:contents}.awardFirstSlot[hidden]{display:none}
+
+/* Keep red awards together before green awards; compact phone cards remain readable. */
+@media (min-width:581px) and (max-width:1000px){
+  .awardCards,.weeklyHighlights .awardCards{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:580px){
+  .awardCards,.weeklyHighlights .awardCards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+  .awardGroup{gap:10px}
+  .awardCards .weeklyCard{padding:12px}
+  .awardCards .weeklyCard h4{font-size:14px;line-height:1.4}
+  .awardCards .weeklyNames button{flex-wrap:wrap;gap:6px;font-size:13px}
+  .awardCards .awardDerived{font-size:13px}
+  .awardCards .awardJoke,.awardCards .awardEvidence,.awardCards .awardDetail{font-size:12px}
+  .awardCards .awardEvidence{padding-left:14px}
+  .awardCards .awardActions button{padding:8px;font-size:12px;max-width:100%;overflow-wrap:anywhere}
+  .awardCards .ghostIdentity button{flex-wrap:wrap;gap:6px;font-size:13px;overflow-wrap:anywhere;max-width:100%}
+  .awardCards .ghostIdentity .avatar{width:32px;height:32px}
+  .awardCards .weeklyValue strong{font-size:25px}
+  .awardCards .weeklyValue{gap:5px}
+}

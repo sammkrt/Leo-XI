@@ -287,7 +287,7 @@ export function AwardCards({
 }) {
   const [playerFilter,setPlayerFilter]=useState('');
   const options=playerOptions||[...new Map(report.results.flatMap(r=>r.candidates).map(p=>[p.name,{name:p.name,proName:p.proName}])).values()];
-  const selected = (compact ? selectHomeAwards(report) : report.results).filter(r=>!playerFilter||r.winners.some(p=>p.name===playerFilter));
+  const selected = (compact ? selectHomeAwards(report) : report.results).filter(r=>!playerFilter||r.winners.some(p=>p.name===playerFilter)).sort((a,b)=>{const rank={negative:0,positive:1,neutral:2};return rank[awardTone(a.definition.id)]-rank[awardTone(b.definition.id)];});
   const firstVisible=!playerFilter||firstCardPlayers.includes(playerFilter);
   return (
     <><div className="awardFilterBar"><label>Oyuncu<select aria-label="Kartları oyuncuya göre filtrele" value={playerFilter} onChange={e=>setPlayerFilter(e.target.value)}><option value="">Tüm oyuncular</option>{options.map(p=><option key={p.name} value={p.name}>{p.proName} · {p.name}</option>)}</select></label><button type="button" onClick={()=>setPlayerFilter('')} disabled={!playerFilter}>Filtreleri temizle</button><span>Yeşil: olumlu · Kırmızı: olumsuz</span></div>
