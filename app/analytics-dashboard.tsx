@@ -311,6 +311,7 @@ export default function AnalyticsDashboard({
   members = [],
   asOf = "",
   rosterAsOf = "",
+  research,
   awards = [],
   awardNotice = "",
 }: {
@@ -319,6 +320,7 @@ export default function AnalyticsDashboard({
   members?: AwardMember[];
   asOf?: string;
   rosterAsOf?: string;
+  research?: import("../lib/research-types").ResearchContext;
   awards?: AwardSnapshot[];
   awardNotice?: string;
 }) {
@@ -776,7 +778,7 @@ export default function AnalyticsDashboard({
         role="tabpanel"
         aria-labelledby={"analysis-tab-" + filters.view}
       >
-        {filters.view === "titles" && <TeamTitles matches={pool} history={matches} members={members} filters={filters} onPlayer={id=>selectPlayers([id])} onMatch={onMatch} asOf={asOf} rosterAsOf={rosterAsOf} snapshots={awards} archiveNotice={awardNotice}/>}
+        {filters.view === "titles" && <TeamTitles research={research} matches={pool} history={matches} members={members} filters={filters} onPlayer={id=>selectPlayers([id])} onMatch={onMatch} asOf={asOf} rosterAsOf={rosterAsOf} snapshots={awards} archiveNotice={awardNotice}/>}
         {!pool.length ? (
           <section className="panel">
             <p className="empty">

@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-ALLOWED = {'clubs/matches', 'clubs/overallStats', 'members/stats', 'allTimeLeaderboard/search'}
+ALLOWED = {'clubs/matches', 'clubs/overallStats', 'members/stats', 'allTimeLeaderboard/search', 'currentSeasonLeaderboard/search', 'clubs/info', 'members/career/stats', 'club/playoffAchievements'}
 HEADERS = {
     'Accept': 'application/json',
     'Accept-Language': 'en-US,en;q=0.9',

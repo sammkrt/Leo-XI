@@ -10,6 +10,7 @@ export default function WeeklyHighlights({
   onMatch,
   asOf,
   rosterAsOf,
+  research,
 }: {
   matches: Match[];
   members: Player[];
@@ -17,6 +18,7 @@ export default function WeeklyHighlights({
   onMatch: (id: string) => void;
   asOf: string;
   rosterAsOf: string;
+  research?: import("../lib/research-types").ResearchContext;
 }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -24,8 +26,8 @@ export default function WeeklyHighlights({
     return () => clearInterval(timer);
   }, []);
   const report = useMemo(() => {
-    return weeklyCards(matches, members, now, { asOf, rosterAsOf });
-  }, [matches, members, asOf, rosterAsOf, now]);
+    return weeklyCards(matches, members, now, { asOf, rosterAsOf, research });
+  }, [matches, members, asOf, rosterAsOf, research, now]);
   return (
     <section className="weeklyHighlights" aria-label="Haftanın kartları">
       <div className="weeklyHeading">

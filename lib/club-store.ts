@@ -1,3 +1,4 @@
+import type {ResearchContext,RatingSnapshot} from './research-types';
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
 import {validateFeed,validateMatchFeed} from './club-feed.mjs';
@@ -69,7 +70,8 @@ export class ClubStore {
   const latest=(await this.state.storage.get<ClubData>('latest'))||{...snapshot,matches:[]};
   const ids=await this.state.storage.get<string[]>('recentMatchIds')||[];
   const matches=[];for(const id of ids){const m=await this.state.storage.get<Match>('match:'+id);if(m)matches.push(m)}
-  return {...latest,matches:uniqueMatches(matches)};
+  const research=await this.state.storage.get<ResearchContext>('research');
+  return {...latest,...(research?{research}:{}),matches:uniqueMatches(matches)};
  }
  async sync():Promise<ClubData>{
   if(this.syncing)return this.syncing;
@@ -87,6 +89,7 @@ export class ClubStore {
    const matchTime=await this.state.storage.get<string>('lastMatchUpdate')||current.fetchedAt;
    if(Date.parse(data.fetchedAt)<Date.parse(matchTime))throw new SyncFailure('FEED_OLDER_DATA');
    await this.state.storage.transaction(async(tx)=>{
+    if(data.research){await tx.put('research',data.research);for(const rating of data.research.ratings)await tx.put('rating:'+rating.clubId+':'+rating.observedAt,rating);}
     if(legacy)await tx.put('latest',{...data,matches:[]});
     await tx.put('lastMatchUpdate',data.fetchedAt);await tx.put('recentMatchIds',clean.map(m=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
@@ -127,7 +130,8 @@ export class ClubStore {
    try{awards=await this.readAwards(this.state.storage)}catch{awardNotice='Unvan arşivi okunamadı; maç arşivi gösterilmeye devam ediyor.';}
    const lastMatchUpdate=await this.state.storage.get<string>('lastMatchUpdate')||(await this.latestData()).fetchedAt;
    const error=await this.state.storage.get('syncError');const stale=Date.now()-Date.parse(lastMatchUpdate)>36*60*60*1000;
-   return json({matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,collectionSchedule:await this.state.storage.get('collectionDispatch'),notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
+   const ratingRecords=await this.state.storage.list<RatingSnapshot>({prefix:'rating:'});
+   return json({ratings:[...ratingRecords.values()],matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,collectionSchedule:await this.state.storage.get('collectionDispatch'),notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
   }
   if(url.pathname==='/api/attendance'){
    const day=url.searchParams.get('date')||amsterdamDay();if(!validDay(day))return json({error:'Geçerli bir tarih seç.'},400);

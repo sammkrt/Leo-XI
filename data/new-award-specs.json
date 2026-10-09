@@ -1,0 +1,719 @@
+{
+  "spec_version": "2026-10-09",
+  "note": "Conceptual formulas; needs actual FC27 club data validation; statuses distinguish confirmed/partial/experimental",
+  "cards": [
+    {
+      "id": "A01",
+      "category": "Hücum • Övgü",
+      "name": "🎪 Haftanın Şovmeni",
+      "tagline": "Gol atmaya değil, fragman çekmeye gelmiş.",
+      "events": [
+        38,
+        147,
+        123,
+        128,
+        131,
+        136,
+        214,
+        112,
+        174
+      ],
+      "score_template": "0.27 P(E38/M) + 0.20 P(E147/M) + 0.25 P(min(E123,E214)/max(E214,1)) + 0.16 P((E128+E131+E136)/max(E214,1)) + 0.12 P(E174/M)",
+      "eligibility": "M≥3; E214≥1 VEYA E38+E147≥3",
+      "caution": "E123 kısmi (~%99); E128/131/136 gol türleri çakışabilir, benzersiz gol toplamı değildir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A02",
+      "category": "Hücum • Övgü",
+      "name": "🦚 Mahallenin Neymar'ı",
+      "tagline": "Çalım atmadı, adamın joystick'ini bozdu.",
+      "events": [
+        38,
+        112,
+        174,
+        97
+      ],
+      "score_template": "0.45 P(E38/max(E112,1)) + 0.35 P(E112/M) + 0.20 P(E174/M)",
+      "eligibility": "M≥3; E112≥4; E174≥5",
+      "caution": "E38, E112'nin alt kümesidir; E97 top taşıma türüdür, çalım denemesi paydası değildir. E97 bağlam metni için.",
+      "default_enabled": true
+    },
+    {
+      "id": "A03",
+      "category": "Hücum • Taşlama",
+      "name": "🚀 NASA Stajyeri",
+      "tagline": "Şut Dünya atmosferini terk etti, top geri dönmedi.",
+      "events": [
+        18,
+        19,
+        13,
+        14,
+        217,
+        218,
+        214
+      ],
+      "score_template": "0.50 P(E19/max(E18+E19,1)) + 0.30 P((E18+E19)/M) + 0.20 P(E218/max(E217+E218,1))",
+      "eligibility": "M≥3; E18+E19≥5; E217+E218≥8",
+      "caution": "Dış şut profili ölçer; tüm ıskaları göğe atılmış şut diye yorumlamaz. E13/E14 karşılaştırmalı bölge bağlamı; E214 bağlam.",
+      "default_enabled": true
+    },
+    {
+      "id": "A04",
+      "category": "Hücum • Taşlama",
+      "name": "🧱 Kalecinin Arkadaşı",
+      "tagline": "Kaleci onun sayesinde maçın adamı oldu.",
+      "events": [
+        202,
+        217,
+        218,
+        214,
+        13,
+        14
+      ],
+      "score_template": "0.45 P(E202/max(E217,1)) + 0.35 P(E202/M) + 0.20 P(E14/max(E13+E14,1))",
+      "eligibility": "M≥3; E217≥5; E202≥2",
+      "caution": "E202 “saved shot” olayının oyuncu tarafındaki anlamı doğrulansın; şut türleri çift sayılmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A05",
+      "category": "Hücum • Övgü",
+      "name": "🎯 Ceza Sahası Cerrahı",
+      "tagline": "İçeri girdi mi işini bitiriyor, lafı uzatmıyor.",
+      "events": [
+        13,
+        14,
+        18,
+        19,
+        214,
+        217,
+        218
+      ],
+      "score_template": "0.50 P(E13/max(E13+E14,1)) + 0.30 P(E13/M) + 0.20 P(E214/max(E217+E218,1))",
+      "eligibility": "M≥3; E13+E14≥6; E214≥2",
+      "caution": "İçeriden gol sayısı yok; “içeride bitirdiği” iddiası kurulmaz, içeride isabet profili yorumlanır.",
+      "default_enabled": true
+    },
+    {
+      "id": "A06",
+      "category": "Hücum • Övgü",
+      "name": "🥄 Kepçeyle Gol Atan",
+      "tagline": "Kaleciyle göz göze gelip üstünden aşırdı.",
+      "events": [
+        123,
+        214,
+        128,
+        131,
+        136
+      ],
+      "score_template": "0.65 P(min(E123,E214)/max(E214,1)) + 0.35 P(E123/M)",
+      "eligibility": "M≥3; E214≥2; E123≥1",
+      "caution": "E123 doğrulanmış değil, yüksek güvenli kısmi. Bu kart doğrulama bayrağıyla çalışır; E128/E131/E136 yalnız detay etiketleri.",
+      "default_enabled": true
+    },
+    {
+      "id": "A07",
+      "category": "Hücum • Taşlama",
+      "name": "👑 Bencil Kral",
+      "tagline": "Şut tuşu aşınmış, pas tuşu kutudan çıkmamış.",
+      "events": [
+        217,
+        218,
+        214,
+        11,
+        115,
+        215,
+        216,
+        147,
+        152
+      ],
+      "score_template": "0.45 P(((E217+E218)/max(takım_şutları,1))) + 0.35 P((E217+E218)/M) + 0.20 P((1-E214/max(E217+E218,1))*(1-(E11+0.5*E115)/max(E217+E218+E11+0.5*E115,1)))",
+      "eligibility": "M≥3; E217+E218≥8; aynı maçlarda takım şutu var",
+      "caution": "Golcü olmayı cezalandırmaz: yüksek şut payı ve düşük yaratıcı katkı şarttır. E147/E152 + paslar açıklamada görünür.",
+      "default_enabled": true
+    },
+    {
+      "id": "A08",
+      "category": "Hücum • Övgü",
+      "name": "🪄 İnce İşçilik",
+      "tagline": "Pas attı mı savunmanın tapusu el değiştiriyor.",
+      "events": [
+        152,
+        118,
+        11,
+        115,
+        143,
+        147,
+        215,
+        216
+      ],
+      "score_template": "0.35 P(E152/M) + 0.25 P(E118/max(E11,1)) + 0.25 P(E115/M) + 0.15 P(E147/M)",
+      "eligibility": "M≥3; E215+E216≥30; E152+E115≥3",
+      "caution": "E118 asist alt türüdür; E11'e eklenmez. E143 ve genel pas isabeti anlatı/karşılaştırma.",
+      "default_enabled": true
+    },
+    {
+      "id": "A09",
+      "category": "Hücum • Övgü",
+      "name": "🧠 Görünmeyen Mimar",
+      "tagline": "Asisti yapan değil, asistçinin akıl hocası.",
+      "events": [
+        115,
+        11,
+        143,
+        152,
+        176,
+        177
+      ],
+      "score_template": "0.55 P(E115/M) + 0.25 P(E143/M) + 0.20 P((E176+E177)/M)",
+      "eligibility": "M≥3; E115≥2",
+      "caution": "E115 ikinci asisttir; E176/E177 oyun içi feedback, olayların aynı pozisyonda olduğu iddia edilemez.",
+      "default_enabled": true
+    },
+    {
+      "id": "A10",
+      "category": "Hücum • Taşlama",
+      "name": "📵 Ofsayt Çağrı Merkezi",
+      "tagline": "Savunmanın arkasına arıyor, sürekli meşgul.",
+      "events": [
+        153,
+        152,
+        30,
+        31,
+        104
+      ],
+      "score_template": "0.65 P(E153/max(E30+E31+E153,1)) + 0.35 P(E153/M)",
+      "eligibility": "M≥3; E153≥2; E30+E31≥15",
+      "caution": "E153 ofsayt pası, oyuncunun kendisinin ofsayta yakalanması değil. E104 kısmi, skorda yok.",
+      "default_enabled": true
+    },
+    {
+      "id": "A11",
+      "category": "Pas • Övgü",
+      "name": "🏓 Langırt Ustası",
+      "tagline": "Tek dokunuşla herkesin kafasına top sektirdi.",
+      "events": [
+        143,
+        24,
+        25,
+        215,
+        216,
+        30,
+        31
+      ],
+      "score_template": "0.45 P(E143/max(E215+E216,1)) + 0.30 P(E143/M) + 0.25 P(E30/max(E30+E31,1))",
+      "eligibility": "M≥3; E143≥8; E30+E31≥15",
+      "caution": "E24/25 kısa pas bağlamıdır; E143 tek dokunuş pası ile eşleşebilir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A12",
+      "category": "Pas • Övgü",
+      "name": "📦 Kıtalararası Kargo",
+      "tagline": "Topu gönderdi, kargo takip numarası bile verdi.",
+      "events": [
+        144,
+        28,
+        29,
+        26,
+        27,
+        215,
+        216
+      ],
+      "score_template": "0.40 P(E144/M) + 0.35 P(E28/max(E28+E29,1)) + 0.25 P(E28/M)",
+      "eligibility": "M≥3; E28+E29≥8; E144≥2",
+      "caution": "E144 yön değiştirme, E28 uzun pas; bazen aynı pas olabilir, ayrı endeks bileşenleri. Orta mesafe E26/27 ile kıyas bağlamı.",
+      "default_enabled": true
+    },
+    {
+      "id": "A13",
+      "category": "Pas • Taşlama",
+      "name": "🧻 Yan Sanayi Xavi",
+      "tagline": "Pas var, istikamet genellikle yan komşu.",
+      "events": [
+        32,
+        33,
+        34,
+        35,
+        24,
+        25,
+        30,
+        31,
+        152,
+        215,
+        216
+      ],
+      "score_template": "0.50 P((E32+E34)/max(E30+E32+E34,1)) + 0.30 P((E24+E25)/max(E215+E216,1)) + 0.20 P(1-E152/max(E215,1))",
+      "eligibility": "M≥3; yönü bilinen tamamlanan pas≥40; toplam pas≥50",
+      "caution": "Geri Vites'in kopyası değil: yan/geri + kısa + az delici pas kombinasyonu. Pas yönü ve uzunluğu birbirine toplanmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A14",
+      "category": "Pas • Taşlama",
+      "name": "📞 Yanlış Numara",
+      "tagline": "Pası gönderdi, alıcı yerine komşunun zili çaldı.",
+      "events": [
+        31,
+        33,
+        35,
+        25,
+        27,
+        29,
+        37,
+        216,
+        151,
+        30,
+        215
+      ],
+      "score_template": "0.45 P(E31/max(E30+E31,1)) + 0.30 P((E25+E27+E29+E37)/max(E215+E216,1)) + 0.25 P(E216/M)",
+      "eligibility": "M≥3; E215+E216≥50; E30+E31≥15",
+      "caution": "E151 “bad pass?” doğrulanmadığı için skor dışı. E216 genel hata, alt türler tekrar toplanmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A15",
+      "category": "Pas • Taşlama",
+      "name": "🎭 Ben Öyle Demek İstemedim",
+      "tagline": "Oyun bile “başka yere atsaydın” dedi.",
+      "events": [
+        182,
+        207,
+        175,
+        183,
+        176,
+        177,
+        212,
+        215,
+        216
+      ],
+      "score_template": "0.40 P(E182/M) + 0.30 P(E207/M) + 0.30 P(E175/M)",
+      "eligibility": "M≥3; toplam anlamlı MF feedback≥5; E215+E216≥30",
+      "caution": "Feedback etiketleri seyrek/kontekstli. E212 “Use the ball” tek başına yanlış karar demek değil; E183 ve iyi karar olayları karşı delil.",
+      "default_enabled": true
+    },
+    {
+      "id": "A16",
+      "category": "Pas • Övgü",
+      "name": "🧭 Doğru Adres",
+      "tagline": "Top gelmeden bir sonraki hamleyi hesapladı.",
+      "events": [
+        176,
+        177,
+        182,
+        183,
+        207,
+        152,
+        215,
+        216
+      ],
+      "score_template": "0.50 P((E176+E177)/max(E176+E177+E182,1)) + 0.25 P((E176+E177)/M) + 0.25 P(E152/M)",
+      "eligibility": "M≥3; E176+E177+E182≥5",
+      "caution": "Feedback seçici olabilir; tüm pasların doğru karar yüzdesi değildir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A17",
+      "category": "Kanat • Övgü",
+      "name": "🧵 Terzi Makası",
+      "tagline": "Orta kesti, rakip savunma dikiş tutmadı.",
+      "events": [
+        36,
+        37,
+        145,
+        156,
+        157,
+        11,
+        118
+      ],
+      "score_template": "0.55 P(E36/max(E36+E37,1)) + 0.30 P(E36/M) + 0.15 P(E11/M)",
+      "eligibility": "M≥3; E36+E37≥8",
+      "caution": "E145 korner girişimleri ve E156 bloklanan ortalar bağlamdır. E157 kısmi; toplam orta paydasına sokulmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A18",
+      "category": "Kanat • Taşlama",
+      "name": "📡 Uydu Yayını",
+      "tagline": "Ortayı yaptı, top yayın uydusuna bağlandı.",
+      "events": [
+        36,
+        37,
+        145,
+        156,
+        157,
+        215,
+        216
+      ],
+      "score_template": "0.55 P(E37/max(E36+E37,1)) + 0.30 P(E37/M) + 0.15 P(E37/max(E215+E216,1))",
+      "eligibility": "M≥3; E36+E37≥10; E37≥4",
+      "caution": "E145 korner sayısıdır, hepsinin orta olduğu bilinmez. E157 deneysel gösterilebilir ama skor dışı.",
+      "default_enabled": true
+    },
+    {
+      "id": "A19",
+      "category": "Orta saha • Övgü",
+      "name": "🐝 Pres Makinesi",
+      "tagline": "Adam topa değil, rakibin nefesine bastı.",
+      "events": [
+        110,
+        158,
+        6,
+        164,
+        163
+      ],
+      "score_template": "0.45 P(E110/M) + 0.35 P(E158/M) + 0.20 P(E6/M)",
+      "eligibility": "M≥3; E110+E158+E6≥6",
+      "caution": "Top kazanma, dispossession ve interception tek olayda örtüşebilir; rakamlar benzersiz müdahale toplamı değildir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A20",
+      "category": "Orta saha • Taşlama",
+      "name": "🐙 Hücum Fişini Çeken",
+      "tagline": "Topu istedi, top ondan ayrılmak istedi.",
+      "events": [
+        110,
+        107,
+        106,
+        174,
+        112,
+        152,
+        214,
+        11
+      ],
+      "score_template": "0.40 P(E107/max(E107+E110,1)) + 0.30 P(E107/M) + 0.30 P((E174+E112)/max(E214+E11+1,1))",
+      "eligibility": "M≥3; E107+E110≥7; E174+E112≥5",
+      "caution": "Agregalar olay sırasını içermez; “topu kazanıp aynı pozisyonda kaybetti” kesinliği yok.",
+      "default_enabled": true
+    },
+    {
+      "id": "A21",
+      "category": "Savunma • Övgü",
+      "name": "🧯 Yangın Tüpü",
+      "tagline": "Herkes panikledi, bu yangın söndürüp çıktı.",
+      "events": [
+        108,
+        105,
+        164,
+        6,
+        94,
+        10
+      ],
+      "score_template": "0.35 P(E108/M) + 0.30 P(E164/M) + 0.25 P(E6/M) + 0.10 P(1/(1+E94+E10))",
+      "eligibility": "M≥3; E108+E164+E6≥7",
+      "caution": "Elektrik Süpürgesi'nden farklı: savunma üçlüsündeki temiz müdahale ve risk kontrolü. E105 kayıp karşılaştırması.",
+      "default_enabled": true
+    },
+    {
+      "id": "A22",
+      "category": "Savunma • Taşlama",
+      "name": "🎁 Misafirperver Defans",
+      "tagline": "Rakibe korner, faul, penaltı… çay da ister misin?",
+      "events": [
+        94,
+        10,
+        3,
+        105,
+        95,
+        213,
+        163
+      ],
+      "score_template": "0.40 P((E94+E10+E3)/M) + 0.35 P(E105/M) + 0.25 P((E95+E213+E163)/M)",
+      "eligibility": "M≥3; savunmada ≥3 maç; E94+E10+E3+E105≥3",
+      "caution": "“Gol yedirdi” değil: savunma bölgesindeki risk sinyalleri. Penaltı ve korner farklıdır, eşit sonuç şiddeti değildir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A23",
+      "category": "Savunma • Övgü",
+      "name": "🛝 Kayarak Giren",
+      "tagline": "Fren yerine slide tackle tuşu taktırmış.",
+      "events": [
+        230,
+        229,
+        0,
+        1,
+        164,
+        163
+      ],
+      "score_template": "0.50 P(E230/max(E229+E230,1)) + 0.30 P(E230/M) + 0.20 P(E164/max(E0+E1,1))",
+      "eligibility": "M≥3; E229+E230≥7",
+      "caution": "E0 toplam kazanılan müdahale, E229/E230 alt türü; toplanmaz. E164 clean tackle olayları overlap olabilir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A24",
+      "category": "Savunma • Övgü",
+      "name": "🧼 Tertemiz Kasap",
+      "tagline": "Kesti biçti ama hakeme malzeme vermedi.",
+      "events": [
+        164,
+        0,
+        1,
+        229,
+        230,
+        2,
+        3,
+        95,
+        213,
+        94
+      ],
+      "score_template": "0.45 P(min(1,E164/max(E0+E1,1))) + 0.30 P(E0/max(E0+E1,1)) + 0.25 P(1/(1+E2+E3+E95+E213+E94))",
+      "eligibility": "M≥3; E0+E1≥10",
+      "caution": "E164 çoklu sayılabilir; “faulsüz” yalnız E2+E3=0 ise denir.",
+      "default_enabled": true
+    },
+    {
+      "id": "A25",
+      "category": "Savunma • Taşlama",
+      "name": "🪓 Nazikçe Parçaladı",
+      "tagline": "Topla beraber rakibin sabrını da aldı.",
+      "events": [
+        163,
+        2,
+        3,
+        95,
+        213,
+        94,
+        164,
+        171,
+        0,
+        1
+      ],
+      "score_template": "0.40 P(E163/M) + 0.35 P((E2+E3+2*(E95+E213)+3*E94)/M) + 0.25 P(1-min(1,E164/max(E0+E1,1)))",
+      "eligibility": "M≥3; E2+E3+E163≥3",
+      "caution": "Asabi'den farklı: faul başına şiddet/kart/penaltı profili. E171 etiketi belirsiz: sadece görünür audit.",
+      "default_enabled": true
+    },
+    {
+      "id": "A26",
+      "category": "Savunma • Taşlama",
+      "name": "🧀 İsviçre Peyniri",
+      "tagline": "Savunmada delik yok, mahalle tüneli var.",
+      "events": [
+        105,
+        106,
+        1,
+        99,
+        100,
+        101,
+        102,
+        103,
+        219
+      ],
+      "score_template": "0.40 P((E105+E106)/M) + 0.25 P(E1/M) + 0.35 P((E102+E103)/max(E219,1))",
+      "eligibility": "M≥3; savunma/orta saha≥3 maç; E219≥5",
+      "caution": "E219 = E99..E103; sadece ağırlıklı ağır pozisyon kaybı yüzdesi kullanılır.",
+      "default_enabled": true
+    },
+    {
+      "id": "A27",
+      "category": "Savunma • Taşlama",
+      "name": "🗺️ GPS Sinyali Yok",
+      "tagline": "Hoca sağ bek dedi, adam başka mahallede.",
+      "events": [
+        99,
+        100,
+        101,
+        102,
+        103,
+        111,
+        219,
+        175,
+        212
+      ],
+      "score_template": "0.50 P((E99+2*E100+3*E101+4*E102+5*E103)/max(E219,1)) + 0.30 P(E219/M) + 0.20 P(E219/max(E219+E111,1))",
+      "eligibility": "M≥3; E219≥8",
+      "caution": "E111 iyi pozisyon geri bildirimi; doğrudan tüm pozisyonların paydası değildir. E175/E212 yalnız anlatı bağlamı.",
+      "default_enabled": true
+    },
+    {
+      "id": "A28",
+      "category": "Savunma • Övgü",
+      "name": "✈️ Hava Kuvvetleri",
+      "tagline": "Yerden havaalanına geçiş izni sadece onda.",
+      "events": [
+        265,
+        266,
+        229,
+        230,
+        108,
+        110
+      ],
+      "score_template": "0.45 P(E266/M) + 0.30 P(E265/M) + 0.25 P((E265+E266)/M)",
+      "eligibility": "M≥3; E265+E266≥5",
+      "caution": "Hava topu kazanma SAYISI; deneme event'i olmadığı için hava topu kazanma yüzdesi hesaplanmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A29",
+      "category": "Savunma • Övgü",
+      "name": "🧱 Kapı Duvar",
+      "tagline": "Topu geçirene kadar nöbet bitmiyor.",
+      "events": [
+        156,
+        266,
+        10,
+        229,
+        230,
+        108
+      ],
+      "score_template": "0.40 P(E266/M) + 0.35 P((E229+E230)/M) + 0.25 P(E108/M)",
+      "eligibility": "M≥3; savunma≥3 maç; E266+E229+E230≥6",
+      "caution": "E156 bloklanan ortalar kimin tarafından bloklandı belirsiz: skor dışı; E10 verilen korner yalnız bağlamdır.",
+      "default_enabled": true
+    },
+    {
+      "id": "A30",
+      "category": "Savunma • Taşlama",
+      "name": "🎰 VAR'a Abone",
+      "tagline": "Hakem düdüğü duyunca puanları hazır.",
+      "events": [
+        95,
+        213,
+        96,
+        94,
+        171,
+        2,
+        3,
+        10
+      ],
+      "score_template": "0.40 P((E95+E213)/max(E2+E3,1)) + 0.35 P((E94+E10)/M) + 0.25 P((E95+E213)/M)",
+      "eligibility": "M≥3; E2+E3≥3; E95+E213+E94+E10≥2",
+      "caution": "E96 kırmızı kart değildir: kısmi tetikleyici, skorda yok. E171 serbest vuruş nedeni belirsiz, açıklamada düşük güven.",
+      "default_enabled": true
+    },
+    {
+      "id": "A31",
+      "category": "Kaleci • Övgü",
+      "name": "🧤 Eldivenli Duvar",
+      "tagline": "Topa “buradan geçemezsin” şifresi koymuş.",
+      "events": [
+        267
+      ],
+      "score_template": "0.50 P(Saves/max(Saves+GoalsConceded,1)) + 0.25 P(E267/max(Saves,1)) + 0.25 P(CleanSheetsGK/max(M,1))",
+      "eligibility": "M≥3; kaleci rolü; Saves+GoalsConceded≥8",
+      "caution": "E267 “good direction saves”; diğer istatistikler maç JSON named fields. E49/50 türleri tanımlı değil, skor dışı.",
+      "default_enabled": true
+    },
+    {
+      "id": "A32",
+      "category": "Kaleci • Taşlama",
+      "name": "🧤 Delik Eldiven",
+      "tagline": "Top eline geldi ama misafir olarak uğradı.",
+      "events": [
+        267,
+        49,
+        50
+      ],
+      "score_template": "0.50 P(GoalsConceded/max(Saves+GoalsConceded,1)) + 0.30 P(GoalsConceded/M) + 0.20 P(1-E267/max(Saves,1))",
+      "eligibility": "M≥3; kaleci rolü; Saves+GoalsConceded≥8",
+      "caution": "Yenen golün kaleci hatası olduğu söylenemez. E49/50 yalnız subtype varlık göstergesi, etiketlenmeden skorlanmaz.",
+      "default_enabled": true
+    },
+    {
+      "id": "A33",
+      "category": "Sezon • Övgü",
+      "name": "📈 Sonradan Açılan Füze",
+      "tagline": "Kariyerinde çay servisi, bu sezon hat-trick.",
+      "events": [
+        214,
+        11,
+        115
+      ],
+      "score_template": "0.45 P((CurrentGoals+CurrentAssists)/max(CurrentGames,1) - ((CareerGoals-CurrentGoals)+(CareerAssists-CurrentAssists))/max(CareerGames-CurrentGames,1)) + 0.35 P(CurrentRating-((CareerRating*CareerGames-CurrentRating*CurrentGames)/max(CareerGames-CurrentGames,1))) + 0.20 P((CurrentGoals+CurrentAssists)/max(CurrentGames,1))",
+      "eligibility": "sezon maç≥8; sezon öncesi kariyer maç≥10; career>season",
+      "caution": "Sezon kariyerin alt kümesi: optimum karşılaştırma previous=(career-current) ayrı oyun sayılarıyla yapılmalı. Bu şablon kariyerden sezonu çıkararak önceki dönemi karşılaştırır.",
+      "default_enabled": true
+    },
+    {
+      "id": "A34",
+      "category": "Kulüp • Taşlama",
+      "name": "🫠 Son Dakika Nazarı",
+      "tagline": "Klasman ısırıyor, form grafiği tatile çıktı.",
+      "events": [
+        214,
+        11
+      ],
+      "score_template": "0.45 team_loss_rate_last_10 + 0.30 min(1,max(0,goalsAgainst-goals)/max(games,1)) + 0.25 max(0,allTimeWinRate-currentSeasonWinRate)",
+      "eligibility": "takım son 5 maç; leaderboard iki dönem de var",
+      "caution": "Takım kartı, oyuncuya haksız suç atılmaz. Mevcut Kripto Grafiği bireysel puan oynaklığından farklı.",
+      "default_enabled": true
+    },
+    {
+      "id": "A35",
+      "category": "Maç • Taşlama",
+      "name": "📉 90 Dakika Turist",
+      "tagline": "Sahada bulunduğu kesin, haritada görünmedi.",
+      "events": [
+        97,
+        174,
+        110,
+        108,
+        109,
+        215,
+        216,
+        212
+      ],
+      "score_template": "0.35 P(1/(1+E174/max(SecondsPlayed,1)*5400)) + 0.35 P(1/(1+(E108+E109+E110)/max(SecondsPlayed,1)*5400)) + 0.30 P(1/(1+E215/max(SecondsPlayed,1)*5400))",
+      "eligibility": "M≥3; toplam oyun süresi≥180 dakika",
+      "caution": "E97 taşıma bağlamıdır; dakika ölçekleme validasyon gerekir. “Etkisiz” yorumu pozisyona göre ayarlanmalıdır.",
+      "default_enabled": true
+    },
+    {
+      "id": "A36",
+      "category": "Deneysel • Taşlama",
+      "name": "🔫 VURSANA BE!",
+      "tagline": "Kaleci bekledi, defans bekledi, o hâlâ opsiyon bakıyor.",
+      "events": [
+        179,
+        217,
+        218,
+        182,
+        183,
+        177
+      ],
+      "score_template": "0.60 P(E179/M) + 0.25 P(E182/M) + 0.15 P(1/(1+(E217+E218)/M))",
+      "eligibility": "M≥3; E179 en az 3 gözlemle yeniden doğrulanmalı",
+      "caution": "E179 sadece 2/2 gözlem: varsayılan kapalı. E183 “chose to pass” şut kaçırma kanıtı değildir.",
+      "default_enabled": false
+    },
+    {
+      "id": "A37",
+      "category": "Deneysel • Övgü",
+      "name": "🧬 Tiki Taka DNA'sı",
+      "tagline": "Top değmeden düşünmüş, top değince göndermiş.",
+      "events": [
+        150,
+        143,
+        24,
+        26,
+        215,
+        216
+      ],
+      "score_template": "0.40 P(E150/M) + 0.35 P(E143/M) + 0.25 P(E215/max(E215+E216,1))",
+      "eligibility": "E150 en az 30 doğrulanmış oyuncu-maçta test edilmiş olmalı",
+      "caution": "E150 sadece 1/1, düşük güven; opsiyonel ve varsayılan kapalı.",
+      "default_enabled": false
+    },
+    {
+      "id": "A38",
+      "category": "Deneysel • Övgü",
+      "name": "🐺 Çalım Vergisi",
+      "tagline": "Çalıma kalkana terminalden ceza kesiyor.",
+      "events": [
+        159,
+        158,
+        164,
+        0,
+        1
+      ],
+      "score_template": "0.35 P(E159/M) + 0.35 P(E158/M) + 0.30 P(E164/max(E0+E1,1))",
+      "eligibility": "E159 yeni örneklerle doğrulanmalı; en az 3 maç",
+      "caution": "E159 1/1, yalnız deneysel modda.",
+      "default_enabled": false
+    }
+  ]
+}

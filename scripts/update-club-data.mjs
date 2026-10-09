@@ -36,6 +36,29 @@ async function collect(){
  return validateFeed({club:Array.isArray(clubs)&&clubs.find(c=>String(c.clubId)===CLUB_ID),overall:overall?.[0],members:members?.members,matches,fetchedAt:new Date().toISOString()});
 }
 const data=await collect();
+// All eight endpoints are collected; enrichment failures are visible and cannot discard matches.
+const observedAt=new Date().toISOString(), research={version:1,observedAt,endpoints:[{endpoint:'clubs/matches',status:'ok',observedAt}],ratings:[]};
+const ownEndpoints=[['info','clubs/info?platform=common-gen5&clubIds='+CLUB_ID],['overall','clubs/overallStats?platform=common-gen5&clubIds='+CLUB_ID],['members','members/stats?platform=common-gen5&clubId='+CLUB_ID],['career','members/career/stats?platform=common-gen5&clubId='+CLUB_ID],['allTime','allTimeLeaderboard/search?platform=common-gen5&clubName=LEO%20XI'],['season','currentSeasonLeaderboard/search?platform=common-gen5&clubName=LEO%20XI'],['playoffs','club/playoffAchievements?platform=common-gen5&clubId='+CLUB_ID]];
+for(const [key,path]of ownEndpoints){
+ try{const raw=await get(path);let value;
+ if(key==='info')value=raw?.[CLUB_ID];
+ else if(key==='members'||key==='career')value=raw?.members;
+ else if(key==='playoffs')value=Array.isArray(raw)?raw:undefined;
+ else value=Array.isArray(raw)?raw.find(r=>String(r.clubId)===CLUB_ID):undefined;
+ const valid=Array.isArray(value)?value.length>0:value&&typeof value==='object';
+ research.endpoints.push({endpoint:path.split('?')[0],status:valid?'ok':'empty',observedAt});
+ if(valid)research[key]=value;
+ }catch{research.endpoints.push({endpoint:path.split('?')[0],status:'error',observedAt,error:'EA yanıtı alınamadı'});}
+}
+const addRating=(clubId,name,row)=>{const sr=row?.skillRating;if(sr!==null&&sr!==undefined&&sr!==''&&Number.isFinite(Number(sr))&&Number(sr)>=0)research.ratings.push({clubId,name,skillRating:Number(sr),observedAt,source:'clubs/overallStats'});};
+addRating(CLUB_ID,'LEO XI',research.overall);
+const others=new Map(data.matches.flatMap(m=>Object.entries(m.clubs).filter(([id])=>id!==CLUB_ID).map(([id,c])=>[id,c?.details?.name||id])));
+// At most ten opponents per collection; bounded groups prevent a request storm.
+const entries=[...others].slice(0,10);
+for(let i=0;i<entries.length;i+=3)await Promise.all(entries.slice(i,i+3).map(async([id,name])=>{
+ try{const raw=await get('clubs/overallStats?platform=common-gen5&clubIds='+encodeURIComponent(id));const row=Array.isArray(raw)?raw.find(r=>String(r.clubId)===id):null;addRating(id,name,row);}catch{/* Missing ratings remain unknown. */}
+}));
+data.research=research;
 const filename=matchesOnly?'matches.json':'latest.json';
 const content=JSON.stringify(data);
 if(process.argv.includes('--local')){
