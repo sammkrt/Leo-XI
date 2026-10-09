@@ -46,7 +46,8 @@ function AwardDetail({
       <summary>Neden kazandı?</summary>
       <div>
         <p>{def.formula}</p>
-        <p className="footnote" hidden={!!def.totalField}>
+        {def.id.startsWith("new-")&&<p className="footnote">Bileşik davranış endeksi: özellikler diğer uygun rol arkadaşlarının ortalamasına 3 maç önseliyle yaklaştırılır; aynı rolde 4 aday yoksa takım referansı kullanılır. Her ağırlık sabittir; eksik bileşende ağırlık dağıtılmaz. Denetimde ham E kodları ve aynı kapsamdaki toplamlar görünür.</p>}
+        <p className="footnote" hidden={!!def.totalField||def.id.startsWith("new-")}>
           {report.version} / {def.variant}. adjRate = (başarı + k ×
           baseline)/(deneme + k). adjMatch = (sayı + {report.rules.priorMatches}{" "}
           × baseline)/(M + {report.rules.priorMatches}). Priorlar
@@ -145,7 +146,7 @@ function AwardDetail({
             </tbody>
           </table>
         </div>
-        <p className="footnote" hidden={!!def.totalField}>
+        <p className="footnote" hidden={!!def.totalField||def.id.startsWith("new-")}>
           P uygun takım adayları arasında eşit değerlerde orta sıradır; olasılık
           veya güven değildir. Eşitlik toleransı{" "}
           {report.rules.equalityTolerance}; lider farkı en az{" "}
@@ -411,6 +412,7 @@ export default function TeamTitles({
   onMatch,
   asOf,
   rosterAsOf,
+  research,
   snapshots = [],
   archiveNotice = "",
 }: {
@@ -422,6 +424,7 @@ export default function TeamTitles({
   onMatch: (id: string) => void;
   asOf: string;
   rosterAsOf: string;
+  research?: import("../lib/research-types").ResearchContext;
   snapshots?: AwardSnapshot[];
   archiveNotice?: string;
 }) {
@@ -448,10 +451,11 @@ export default function TeamTitles({
           filters.scope === "last7" ||
           (filters.scope === "week" && awardPeriodIsCurrentWeek(matches)),
         rosterAsOf,
+        research,
         provisional:
           filters.scope !== "week" || awardPeriodIsCurrentWeek(matches),
       }),
-    [matches, members, history, filters, asOf, rosterAsOf],
+    [matches, members, history, filters, asOf, rosterAsOf, research],
   );
   return (
     <section className="teamTitles">

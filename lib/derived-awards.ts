@@ -1,3 +1,5 @@
+import {newAwardRegistry,newAwardResults} from './new-awards.ts';
+import type {ResearchContext} from './research-types';
 import { playerRows, metrics } from "./club-analytics.ts";
 import type { PlayerRow } from "./club-analytics.ts";
 import { playerEvents, decodedPlayer } from "./club-events.mjs";
@@ -9,7 +11,7 @@ import {
 } from "./club-export.ts";
 import type { Match } from "./club-types";
 
-export const AWARD_VERSION = "leo-titles-v2";
+export const AWARD_VERSION = "leo-titles-v3";
 export const awardRules = {
   minCandidates: 4,
   minMatches: 3,
@@ -123,6 +125,7 @@ export const pendingBanterCards = [
 ] as const;
 
 export const awardRegistry: AwardDefinition[] = [
+  ...newAwardRegistry,
   {...definition('asabi','Asabi','😤','defense','Top bahane, temas şahane.',['F'],{},[raw('F','Yapılan faul toplamı',1)],'Σ(E2 + E3); en yüksek toplam, eşitlikte ortak unvan','En az 3 kayıtlı maç; oyuncunun ilgili dönemdeki tüm görünümlerinde geçerli faul verisi gerekir. Toplam hacimdir, maç başına oran değildir.'),totalField:'F'},
   {...definition('gariban','Gariban','🩹','style','Topu aldı, dayağı da pakete eklediler.',['FW'],{},[raw('FW','Kazanılan faul toplamı',1)],'Σ(E4); en yüksek toplam, eşitlikte ortak unvan','Kazanılan faul sayısıdır; rakibe kart gördürme veya sakatlık ölçülmez. En az 3 kayıtlı maç ve oyuncunun tüm görünümlerinde geçerli veri gerekir.'),totalField:'FW'},
   ...pendingBanterCards.map(card=>({...definition(card.id,card.title,card.icon,'style',card.joke,[],{},[],card.formula,card.reason,'unavailable-v1'),unavailableReason:card.reason})),
@@ -598,6 +601,7 @@ export type AwardComponent = {
   references: BaselinePart[];
 };
 export type AwardCandidate = {
+  displayPeriod?: string;
   playerId: string;
   name: string;
   proName: string;
@@ -636,6 +640,8 @@ export type AwardReport = {
   provisional: boolean;
 };
 export type AwardOptions = {
+  research?: ResearchContext;
+  allowPartialMappings?: boolean;
   period?: string;
   asOf?: string;
   now?: number;
@@ -980,6 +986,7 @@ export function buildAwardReport(
     identities = identityMembers(options.history || selected, members),
     rules = { ...awardRules, ...options.rules };
   const registry = awardRegistry.filter((def) => {
+    if(def.id.startsWith("new-"))return false;
     if (def.id === "fouls")
       return (
         def.variant ===
@@ -1024,9 +1031,9 @@ export function buildAwardReport(
     asOf: options.asOf || new Date(now).toISOString(),
     matchIds: selected.map((m) => String(m.matchId)),
     rules,
-    results: registry.map((def) =>
+    results: [...registry.map((def) =>
       candidatesFor(def, rows, identities, options, rules),
-    ),
+    ), ...newAwardResults(selected,members,options,rules)],
     casper,
     coverage:
       "Yalnız kayıtlı insan oyuncu-maçlar. Her kartın bileşenleri aynı ortak geçerli satırlardadır; eksik kayıt sıfır değildir. P takım içi orta sıra yüzdeliğidir; olasılık veya güven değildir. LEO XI eğlence endeksidir, bilimsel kalite veya resmî Opta metriği değildir.",

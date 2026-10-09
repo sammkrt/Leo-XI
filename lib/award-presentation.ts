@@ -116,8 +116,8 @@ export function awardCardContent(
     player: candidate.proName,
     name: candidate.name,
     joke: result.definition.joke,
-    ...facts[result.definition.id](),
-    period: report.period,
+    ...(facts[result.definition.id]?.() || {value: candidate.context, evidence: [candidate.M+" ortak maç",result.definition.limitation] as [string,string]}),
+    period: candidate.displayPeriod || report.period,
     matches: candidate.M,
     index:
       candidate.index === null

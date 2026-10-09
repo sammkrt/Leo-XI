@@ -577,7 +577,7 @@ test('card, detail values, chart and PNG use the same immutable computation resu
   const coords=awardCoordinates(result,c);if(coords)assert.ok(Number.isFinite(coords.x)&&Number.isFinite(coords.y));
  }
  assert.deepEqual(selectHomeAwards(r),r.results.filter(result=>result.winners.length));
- assert.equal(new Set(awardRegistry.map(r=>r.id)).size,22);
+ assert.equal(new Set(awardRegistry.map(r=>r.id)).size,60);
 });
 test('weekly archive keeps deterministic results, durable versions and late-data revisions',async()=>{
  const matches=awardMatches({},5),asOf=new Date(awardNow).toISOString();
@@ -604,7 +604,7 @@ test('durable award histories round-trip through bounded storage chunks',async()
  const storage=new BoundedStorage(),s={storage,blockConcurrencyWhile:fn=>fn()},store=new ClubStore(s);await store.ready;
  assert.ok([...storage.values.keys()].filter(k=>k.startsWith('award-chunk:')).length>1);
  const before=(await json(store,'/api/archive')).data.awards;
- assert.ok(before[0].report.results.length===22);
+ assert.ok(before[0].report.results.length===60);
  const restart=new ClubStore(s);assert.deepEqual((await json(restart,'/api/archive')).data.awards,before);
 });
 test('award persistence failures roll back new match writes and preserve existing snapshots',async()=>{
@@ -715,4 +715,14 @@ test('unavailable spatial, aerial and provocation metrics never fabricate winner
   assert.ok(!selectHomeAwards(r).includes(result));
  }
  assert.ok(selectHomeAwards(r).length>6,'homepage no longer limits winners by category');
+});
+
+test('opponent SR observations persist across refreshes and restarts without rewriting historical matches',async()=>{
+ const previous=globalThis.fetch;try{
+  const s=state(),store=new ClubStore(s);await store.ready;
+  const iso=new Date().toISOString();const research={version:1,observedAt:iso,endpoints:[{endpoint:'clubs/overallStats',status:'ok',observedAt:iso}],ratings:[{clubId:'250205',name:'Opponent',skillRating:1900,observedAt:iso,source:'clubs/overallStats'}]};
+  globalThis.fetch=async()=>Response.json({clubId:'79638',matchType:'leagueMatch',matches:snapshot.matches,fetchedAt:iso,research});await store.sync();
+  const archive=(await json(new ClubStore(s),'/api/archive')).data;assert.equal(archive.ratings.length,1);assert.deepEqual(archive.matches,snapshot.matches);
+  globalThis.fetch=mockEA();await store.sync();assert.equal((await json(store,'/api/archive')).data.ratings.length,1);assert.equal((await json(store,'/api/club')).data.research.ratings[0].skillRating,1900);
+ }finally{globalThis.fetch=previous;}
 });

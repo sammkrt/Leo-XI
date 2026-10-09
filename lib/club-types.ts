@@ -1,3 +1,4 @@
+import type {ResearchContext} from './research-types';
 import type snapshot from "../data/snapshot.json";
 
 export type Player = (typeof snapshot.members)[number];
@@ -29,6 +30,7 @@ export type Match = {
 };
 
 export type ClubData = {
+  research?: ResearchContext;
   club: typeof snapshot.club;
   overall: typeof snapshot.overall;
   members: Player[];
@@ -41,6 +43,7 @@ export type ClubData = {
 };
 
 export type MatchFeed = {
+  research?: ResearchContext;
   clubId: string;
   matchType: string;
   matches: Match[];

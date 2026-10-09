@@ -161,3 +161,11 @@ Ana sayfa kazananı bulunan tüm unvanları gösterir; kategori başına seçim 
 - **Gariban:** dönem toplamı `Σ(E4)`; en çok faul kazanan.
 - Her ikisi için en az üç maç, dört uygun aday ve oyuncunun dönem içindeki tüm görünümlerinde geçerli olay verisi gerekir. Sıfır olayda unvan yoktur; tam eşit pozitif toplamlar ortak unvandır. Hacim sıralamasına rol düzeltmesi veya endeks uygulanmaz.
 - **Kudurtucu, Defans Siken, Hücum Siken, Narin Kelebeği, El Bombası, Şaban** tanımlıdır ancak mevcut EA verisi istenen ölçümleri desteklemediğinden aday üretilmez. Rakibe kart gösterilmesini oyuncuya bağlayan olay, hava topu denemesi, yarı saha/ceza sahası koordinatı ve bölgesel pas hatası eksiktir. Saha üçte biri yarı saha/ceza sahası yerine kullanılamaz; top kaybı ile başarısız pas çifte sayılmamalıdır. Eksik kartlar ana sayfada görünmez; unvanlar sayfasında neden açıklanır.
+
+### Rakip/kadro laboratuvarı ve 38 kart (v3)
+
+`/laboratuvar` içinde kişi eşleşmesi ısı haritası, rol dağılımları, maç öncesi SR grupları, kaynak kadrolar ve senaryo analizi bulunur. Puan gözlem tarihleri kalıcı arşivlenir; güncel SR geçmişe yazılmaz. Yetersiz örneklemde gelecek maç olasılığı iddia edilmez. Model ve eşik ayrıntıları: `docs/opponent-model.md`.
+
+38 yeni kart mevcut unvan motoruna eklendi. Kazananlar aynı sade ana sayfa kartlarında görünür. A01/A06 kısmi E123 doğrulamasını, A36–A38 bağımsız deneysel doğrulamayı bekler. Sezon/kulüp kartları güncel endpoint bağlamını bekler; kalan kartlar normal veri/aday eşiklerine tabidir. `data/new-award-specs.json` özgün şartname, `lib/new-award-formulas.ts` tipli formüller, `lib/new-awards.ts` kapsam/sıralama kontrolleridir.
+
+Gece toplayıcısı sekiz EA endpoint'ini ve son rakiplerin SR değerlerini alır. Maç kaynağı zorunlu, diğer kaynaklar opsiyoneldir. Kaynak hataları mevcut arşivi silmez. SR kayıtları `/api/archive` içindeki `ratings`, yeni kaynak bağlamı `/api/club` içindeki `research` alanından sunulur.
