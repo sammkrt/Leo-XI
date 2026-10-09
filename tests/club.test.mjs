@@ -524,7 +524,7 @@ test('role baselines leave self out, require three peers and weight mixed roles 
 });
 test('equal values, near equality, small groups and null components cannot manufacture winners',()=>{
  const config=Object.fromEntries(awardMembers.map(m=>[m.name,{shots:5,passesmade:20,F:2,Y:0,I:3,R:4}]));
- const allEqual=buildAwardReport(awardMatches(config),awardMembers,{now:awardNow});assert.ok(allEqual.results.every(r=>!r.winners.length));
+ const allEqual=buildAwardReport(awardMatches(config),awardMembers,{now:awardNow});assert.ok(allEqual.results.filter(r=>!r.definition.totalField).every(r=>!r.winners.length));
  assert.equal(awardPercentile(2,[1,2,2,3]),.5);
  const small=awardMatches();small.forEach(m=>{delete m.players['79638'].d;delete m.players['79638'].e;delete m.players['79638'].f;});
  const r=buildAwardReport(small,awardMembers,{now:awardNow});assert.ok(r.results.every(r=>!r.winners.length&&r.candidates.every(c=>c.index===null)));
@@ -573,11 +573,11 @@ test('card, detail values, chart and PNG use the same immutable computation resu
  const r=buildAwardReport(awardMatches(),awardMembers,{now:awardNow,period:'Son 7 gün',asOf:new Date(awardNow).toISOString()});
  for(const result of r.results)for(const c of result.winners){
   const before=JSON.stringify(c),content=awardCardContent(result,c,r),svg=awardCardSVG(result,c,r);
-  assert.ok(svg.includes(content.title.replace('&','&amp;')));assert.ok(svg.includes(content.player));assert.ok(svg.includes(content.evidence[0]));assert.ok(svg.includes('Unvan endeksi'));assert.equal(before,JSON.stringify(c));
+  assert.ok(svg.includes(content.title.replace('&','&amp;')));assert.ok(svg.includes(content.player));assert.ok(svg.includes(content.evidence[0]));if(!result.definition.totalField)assert.ok(svg.includes('Unvan endeksi'));assert.equal(before,JSON.stringify(c));
   const coords=awardCoordinates(result,c);if(coords)assert.ok(Number.isFinite(coords.x)&&Number.isFinite(coords.y));
  }
- assert.ok(selectHomeAwards(r).length<=6);assert.equal(new Set(selectHomeAwards(r).map(r=>r.definition.category)).size,selectHomeAwards(r).length);
- assert.equal(new Set(awardRegistry.map(r=>r.id)).size,14);
+ assert.deepEqual(selectHomeAwards(r),r.results.filter(result=>result.winners.length));
+ assert.equal(new Set(awardRegistry.map(r=>r.id)).size,22);
 });
 test('weekly archive keeps deterministic results, durable versions and late-data revisions',async()=>{
  const matches=awardMatches({},5),asOf=new Date(awardNow).toISOString();
@@ -604,7 +604,7 @@ test('durable award histories round-trip through bounded storage chunks',async()
  const storage=new BoundedStorage(),s={storage,blockConcurrencyWhile:fn=>fn()},store=new ClubStore(s);await store.ready;
  assert.ok([...storage.values.keys()].filter(k=>k.startsWith('award-chunk:')).length>1);
  const before=(await json(store,'/api/archive')).data.awards;
- assert.ok(before[0].report.results.length===14);
+ assert.ok(before[0].report.results.length===22);
  const restart=new ClubStore(s);assert.deepEqual((await json(restart,'/api/archive')).data.awards,before);
 });
 test('award persistence failures roll back new match writes and preserve existing snapshots',async()=>{
@@ -675,4 +675,44 @@ test('laboratory and rematch routes round trip',()=>{
  for(const [path,section] of [['/laboratuvar','Takım Laboratuvarı'],['/rovans','Rövanş defteri']]){
   const search=routeSearch(path,'');assert.equal(new URLSearchParams(search).get('leo_tab'),section);assert.equal(locationFromSearch(search),path);
  }
+});
+
+test('banter totals distinguish fouls committed, suffered and opponents; include E3',()=>{
+ const matches=awardMatches({a:{F:10},b:{F:9}});
+ for(const m of matches){
+  m.players['79638'].b.match_event_aggregate_0+=',3:3';
+  for(const [id,p]of Object.entries(m.players['79638']))p.match_event_aggregate_0+=`,4:${id==='c'?12:1}`;
+  m.players.opponent={enemy:awardPlayer('enemy',{F:100})};
+ }
+ const r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.deepEqual(awardResult(r,'asabi').winners.map(c=>c.playerId),['b']);
+ assert.equal(awardResult(r,'asabi').winners[0].totals.F,36);
+ assert.deepEqual(awardResult(r,'gariban').winners.map(c=>c.playerId),['c']);
+ assert.equal(awardResult(r,'gariban').winners[0].totals.FW,36);
+ assert.equal(awardResult(r,'asabi').winners[0].index,null);
+});
+test('banter total winners use volume, share exact ties, reject zero and incomplete samples',()=>{
+ const config=Object.fromEntries(awardMembers.map(m=>[m.name,{F:1}]));
+ let matches=awardMatches({...config,a:{F:4},b:{F:5}},4);
+ delete matches[0].players['79638'].b;
+ let r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.deepEqual(awardResult(r,'asabi').winners.map(c=>c.playerId),['a']);
+ matches=awardMatches(config);
+ r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.equal(awardResult(r,'asabi').winners.length,6);
+ assert.equal(awardResult(r,'gariban').winners.length,0);
+ delete matches[0].players['79638'].a.match_event_aggregate_0;
+ r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.equal(awardCandidate(r,'asabi','a'),undefined);
+ matches=awardMatches(config,4);delete matches[0].players['79638'].a.match_event_aggregate_0;
+ r=buildAwardReport(matches,awardMembers,{now:awardNow});
+ assert.equal(awardCandidate(r,'asabi','a'),undefined,'three complete records cannot hide a missing fourth');
+});
+test('unavailable spatial, aerial and provocation metrics never fabricate winners',()=>{
+ const r=buildAwardReport(awardMatches(),awardMembers,{now:awardNow});
+ for(const id of ['provoker','defense-chaos','attack-chaos','butterfly','grenade','saban']){
+  const result=awardResult(r,id);assert.equal(result.candidates.length,0);assert.equal(result.winners.length,0);assert.match(result.reason,/Hesaplanamıyor/);
+  assert.ok(!selectHomeAwards(r).includes(result));
+ }
+ assert.ok(selectHomeAwards(r).length>6,'homepage no longer limits winners by category');
 });

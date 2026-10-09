@@ -152,3 +152,12 @@ Cloudflare's existing five-minute cron both imports the published feed and dispa
 - Olay eşlemeleri topluluk araştırmasıdır. Şut kategorileri named/event toplamlarıyla doğrulanır. Karşılaştırmalar ilgili metrikte en az %80 oyuncu kapsamı ister; her iki medyan grubunda 5 maç olmadan öneri üretilmez. Benzerlik nedensellik veya kazanma tahmini değildir.
 - Deneyler ve notlar tarayıcının localStorage alanındadır; paylaşılan takım verisi değildir. JSON dışa aktarımı yedek sağlar.
 - Kendi bilgisayarında bu dalı açıp `pnpm install --frozen-lockfile` ve `pnpm dev` çalıştır. Terminalin verdiği yerel adresin `/laboratuvar` ve `/rovans` yolları değişiklikleri merge gerektirmeden gösterir. Uzak Codex ortamındaki localhost adresi kullanıcının bilgisayarına yönlenmez.
+
+### Şaka kartları (v2)
+
+Ana sayfa kazananı bulunan tüm unvanları gösterir; kategori başına seçim sınırı yoktur. Eşit kazananlar aynı kartı paylaşır. Kart ön yüzünden endeks, paylaşım ve PNG kontrolleri kaldırıldı; kaynak ve hesap denetimi açılır detayda kalır.
+
+- **Asabi:** dönem toplamı `Σ(E2 + E3)`; en çok faul yapan.
+- **Gariban:** dönem toplamı `Σ(E4)`; en çok faul kazanan.
+- Her ikisi için en az üç maç, dört uygun aday ve oyuncunun dönem içindeki tüm görünümlerinde geçerli olay verisi gerekir. Sıfır olayda unvan yoktur; tam eşit pozitif toplamlar ortak unvandır. Hacim sıralamasına rol düzeltmesi veya endeks uygulanmaz.
+- **Kudurtucu, Defans Siken, Hücum Siken, Narin Kelebeği, El Bombası, Şaban** tanımlıdır ancak mevcut EA verisi istenen ölçümleri desteklemediğinden aday üretilmez. Rakibe kart gösterilmesini oyuncuya bağlayan olay, hava topu denemesi, yarı saha/ceza sahası koordinatı ve bölgesel pas hatası eksiktir. Saha üçte biri yarı saha/ceza sahası yerine kullanılamaz; top kaybı ile başarısız pas çifte sayılmamalıdır. Eksik kartlar ana sayfada görünmez; unvanlar sayfasında neden açıklanır.
