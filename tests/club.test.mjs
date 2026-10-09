@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,weeklyAward,playerRates,validDay,amsterdamDay,matchTotals} from '../lib/club-model.mjs';
 import {ClubStore} from '../lib/club-store.ts';
+import {HISTORY_IMPORT_VERSION} from '../lib/history-import.ts';
 import {createRawExport,rawExportOptions,selectRawMatches} from '../lib/club-export.ts';
 import {finiteCounter,playerRows,filterPlayerRows,summarize,metrics,metricIds,groupSessions,defaultFilters,filterMatches,previousMatches,playerSummaries,teamSummary,pairSummaries,passingProfile,rollingTrend,buildAnalyticsReport,analyticsCSV,filtersFromSearch,filtersToSearch,rolePercentile,parseJournal,evidenceFor,matchEvidence,analyticsFilename,playerCoordinates,resolveAnalyticsFilters} from '../lib/club-analytics.ts';
 class MemoryStorage{
@@ -17,7 +18,7 @@ class MemoryStorage{
  async list({prefix}){return new Map([...this.values].filter(([key])=>key.startsWith(prefix)).map(([k,v])=>[k,structuredClone(v)]))}
  async transaction(callback){return callback(this)}
 }
-const state=()=>{const storage=new MemoryStorage();return {storage,blockConcurrencyWhile:fn=>fn()}};
+const state=()=>{const storage=new MemoryStorage();storage.values.set('historyImportVersion',HISTORY_IMPORT_VERSION);return {storage,blockConcurrencyWhile:fn=>fn()}};
 const json=async(store,url,options)=>{const r=await store.fetch(new Request('https://club.test'+url,options));return {status:r.status,data:await r.json()}};
 function mockEA(newMatches=snapshot.matches){return async()=>Response.json({clubId:'79638',matchType:'leagueMatch',matches:newMatches,fetchedAt:new Date().toISOString()})}
 test('archive de-duplicates match IDs and orders newest first',()=>{const m=uniqueMatches([...snapshot.matches,...snapshot.matches]);assert.equal(m.length,10);assert.ok(m.every((row,i)=>!i||m[i-1].timestamp>=row.timestamp));assert.equal(matchTotals(m).games,10)});
@@ -628,7 +629,7 @@ test('genuine tied leaders share an award without replacing winners for homepage
 });
 test('unavailable award migration cannot block existing match and attendance APIs',async()=>{
  class FailingAwardStorage extends MemoryStorage{async put(key,value){if(typeof key==='string'&&key.startsWith('award-chunk:'))throw Error('Award write unavailable');return super.put(key,value);}}
- const storage=new FailingAwardStorage();await storage.put({seeded:true,latest:{...snapshot,matches:[]},recentMatchIds:snapshot.matches.map(m=>m.matchId)});for(const match of snapshot.matches)await storage.put('match:'+match.matchId,match);
+ const storage=new FailingAwardStorage();await storage.put('historyImportVersion',HISTORY_IMPORT_VERSION);await storage.put({seeded:true,latest:{...snapshot,matches:[]},recentMatchIds:snapshot.matches.map(m=>m.matchId)});for(const match of snapshot.matches)await storage.put('match:'+match.matchId,match);
  const store=new ClubStore({storage,blockConcurrencyWhile:fn=>fn()});await store.ready;
  const archive=await json(store,'/api/archive');assert.equal(archive.status,200);assert.equal(archive.data.matches.length,10);assert.ok(archive.data.awardNotice);
  assert.equal((await json(store,'/api/club')).status,200);assert.equal((await json(store,'/api/attendance?date=2026-10-08')).status,200);
@@ -740,4 +741,23 @@ test('complete collection updates club totals and roster without resetting the m
  globalThis.fetch=async()=>Response.json({...feed,research:invalid});await store.sync();club=(await json(store,'/api/club')).data;assert.equal(club.fetchedAt,when);assert.equal(club.overall.goals,'284');assert.equal(club.members[0].proName,'Updated name');
  }
  }finally{globalThis.fetch=previous}
+});
+
+import {historicalMatches,reconcileHistoryIdentities} from '../lib/history-import.ts';
+test('historical migration persists 94 unique matches once and protects existing data and recent selection',async()=>{
+ const s=state(),initial=new ClubStore(s);await initial.ready;
+ const current={...historicalMatches[0],preserveExisting:true};await s.storage.put('match:'+current.matchId,current);
+ const attendanceKey='attendance:2026-10-09:Serhantes';await s.storage.put(attendanceKey,{player:'Serhantes',status:'yes'});
+ const before=await s.storage.get('latest'),recent=await s.storage.get('recentMatchIds');await s.storage.delete('historyImportVersion');
+ const migrated=new ClubStore(s);await migrated.ready;
+ const archive=(await json(migrated,'/api/archive')).data;assert.equal(archive.matches.length,94);assert.equal(archive.historyImport.added,83);assert.equal(archive.persistent,true);
+ assert.equal((await s.storage.get('match:'+current.matchId)).preserveExisting,true);
+ assert.deepEqual(await s.storage.get('latest'),before);assert.deepEqual(await s.storage.get('recentMatchIds'),recent);assert.equal((await s.storage.get(attendanceKey)).status,'yes');
+ const savedImport=archive.historyImport;const restarted=new ClubStore(s);await restarted.ready;assert.deepEqual((await json(restarted,'/api/archive')).data.historyImport,savedImport);assert.equal((await json(restarted,'/api/archive')).data.matches.length,94);
+});
+test('historical provisional IDs reconcile with real EA identities without changing raw player counters',()=>{
+ const historical=historicalMatches.find(m=>Object.entries(m.players['79638']).some(([id,p])=>id.startsWith('historical:')&&p.playername==='Serhantes'));
+ assert.ok(historical);const row=Object.entries(historical.players['79638']).find(([id,p])=>id.startsWith('historical:')&&p.playername==='Serhantes')[1];
+ const fresh={...snapshot.matches[0],matchId:'987000123',players:{'79638':{'real-EA-id':{...row}}}};delete fresh.importSource;
+ const result=reconcileHistoryIdentities([historical,fresh]);assert.deepEqual(result[0].players['79638']['real-EA-id'],row);assert.equal(result[1],fresh);assert.equal(reconcileHistoryIdentities(result)[0],result[0]);
 });

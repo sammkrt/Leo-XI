@@ -1,3 +1,4 @@
+import {importHistory,reconcileHistoryIdentities} from './history-import.ts';
 import type {ResearchContext,RatingSnapshot} from './research-types';
 import snapshot from '../data/snapshot.json' with {type:'json'};
 import {uniqueMatches,validDay,amsterdamDay} from './club-model.mjs';
@@ -25,7 +26,8 @@ export class ClubStore {
     for(const match of uniqueMatches(snapshot.matches))records['match:'+match.matchId]=match;
     await state.storage.put(records);
    }
-   if(await state.storage.get('awardVersion')!==AWARD_VERSION){
+   const imported=await importHistory(state.storage);
+   if(imported||await state.storage.get('awardVersion')!==AWARD_VERSION){
     try{
     const records=await state.storage.list<Match>({prefix:'match:'});
     const latest=await this.latestData();
@@ -96,7 +98,9 @@ export class ClubStore {
     await tx.put('lastMatchUpdate',data.fetchedAt);await tx.put('recentMatchIds',clean.map(m=>m.matchId));await tx.put('lastSyncAttempt',new Date().toISOString());await tx.delete('syncError');await tx.delete('syncFailure');
     for(const match of clean)await tx.put('match:'+match.matchId,match);
     const archive=await tx.list<Match>({prefix:'match:'});
-    await this.refreshAwards(tx,[...archive.values()],totals?.members||current.members,data.fetchedAt);
+    const reconciled=reconcileHistoryIdentities([...archive.values()]);
+    for(const match of reconciled)if(match!==archive.get('match:'+match.matchId))await tx.put('match:'+match.matchId,match);
+    await this.refreshAwards(tx,reconciled,totals?.members||current.members,data.fetchedAt);
     await tx.put('awardVersion',AWARD_VERSION);
    });this.awardNotice='';return legacy?data as ClubData:{...(await this.latestData()),mode:'scheduled'};
   }catch(error){
@@ -133,7 +137,7 @@ export class ClubStore {
    const lastMatchUpdate=await this.state.storage.get<string>('lastMatchUpdate')||(await this.latestData()).fetchedAt;
    const error=await this.state.storage.get('syncError');const stale=Date.now()-Date.parse(lastMatchUpdate)>36*60*60*1000;
    const ratingRecords=await this.state.storage.list<RatingSnapshot>({prefix:'rating:'});
-   return json({ratings:[...ratingRecords.values()],matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,collectionSchedule:await this.state.storage.get('collectionDispatch'),notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
+   return json({historyImport:await this.state.storage.get('historyImport'),ratings:[...ratingRecords.values()],matches:uniqueMatches([...records.values()]),awards:awards.sort((a,b)=>b.week.localeCompare(a.week)),awardNotice:awardNotice||undefined,startedAt:await this.state.storage.get('startedAt'),lastSync:await this.state.storage.get('lastSyncAttempt'),lastMatchUpdate,collectionSchedule:await this.state.storage.get('collectionDispatch'),notice:error||(stale?'Yeni maç verisi 36 saattir alınamadı. Önceki maçlar korunuyor.':null),persistent:true});
   }
   if(url.pathname==='/api/attendance'){
    const day=url.searchParams.get('date')||amsterdamDay();if(!validDay(day))return json({error:'Geçerli bir tarih seç.'},400);
