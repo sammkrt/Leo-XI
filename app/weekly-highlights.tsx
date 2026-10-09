@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import WeeklyGhost from "./weekly-ghost";
-import {weeklyGhost} from "../lib/weekly-ghost";
+import {weeklyGhost,weeklyAttendanceRanking} from "../lib/weekly-ghost";
 import { weeklyCards } from "../lib/weekly-cards";
 import { AwardCards } from "./team-titles";
 import type { Match, Player } from "../lib/club-types";
@@ -31,6 +31,7 @@ export default function WeeklyHighlights({
     return weeklyCards(matches, members, now, { asOf, rosterAsOf, research });
   }, [matches, members, asOf, rosterAsOf, research, now]);
   const ghost=useMemo(()=>weeklyGhost(matches,members,now),[matches,members,now]);
+  const attendance=useMemo(()=>weeklyAttendanceRanking(matches,members,now),[matches,members,now]);
   return (
     <section className="weeklyHighlights" aria-label="Haftanın kartları">
       <div className="weeklyHeading">
@@ -42,7 +43,7 @@ export default function WeeklyHighlights({
         compact
         playerOptions={members}
         firstCardPlayers={ghost?.players.map(p=>p.name)||[]}
-        firstCard={ghost?<WeeklyGhost result={ghost} onPlayer={person=>{const member=members.find(m=>m.name===person.name);if(member)onPlayer(member);}}/>:undefined}
+        firstCard={ghost?<WeeklyGhost candidates={attendance.slice(0,3)} result={ghost} onPlayer={person=>{const member=members.find(m=>m.name===person.name);if(member)onPlayer(member);}}/>:undefined}
         onPlayer={(id) => {
           const result = report.results
             .flatMap((r) => r.candidates)
