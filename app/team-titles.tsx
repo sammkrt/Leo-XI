@@ -270,17 +270,20 @@ function TitleCard({
 export function AwardCards({
   report,
   compact = false,
+  firstCard,
   onPlayer,
   onMatch,
 }: {
   report: AwardReport;
   compact?: boolean;
+  firstCard?: import("react").ReactNode;
   onPlayer: (id: string) => void;
   onMatch: (id: string) => void;
 }) {
   const selected = compact ? selectHomeAwards(report) : report.results;
   return (
     <div className="weeklyCards awardCards">
+      {firstCard}
       {selected.map((result) => (
         <div className="awardGroup" key={result.definition.id}>
           {result.winners.length ? (

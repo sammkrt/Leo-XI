@@ -1,0 +1,14 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+import PlayerAvatar from './player-avatar';
+export default function WeeklyGhost({result,onPlayer}:{result:{games:number;players:{name:string;proName:string}[]};onPlayer:(player:{name:string;proName:string})=>void}){
+ const [stage,setStage]=useState<'reveal'|'settle'|'done'>('reveal');const card=useRef<HTMLElement>(null);const close=useRef<HTMLButtonElement>(null);const overlay=useRef<HTMLElement>(null);
+ useEffect(()=>{const active=document.activeElement as HTMLElement|null;close.current?.focus({preventScroll:true});const reveal=setTimeout(()=>{
+  if(card.current&&overlay.current){const target=card.current.getBoundingClientRect(),from=overlay.current.getBoundingClientRect();overlay.current.style.setProperty('--ghost-flight',`translate(${target.left-from.left}px,${target.top-from.top}px) scale(${target.width/from.width},${target.height/from.height})`);}
+  setStage('settle');
+ },5000);const finish=setTimeout(()=>{setStage('done');active?.focus({preventScroll:true});},5700);
+ const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){setStage('done');active?.focus({preventScroll:true});}};window.addEventListener('keydown',escape);
+ return()=>{clearTimeout(reveal);clearTimeout(finish);window.removeEventListener('keydown',escape);};},[]);
+ const content=<><span className="weeklyIcon" aria-hidden="true">👻</span><h4>Haftanın Hayaleti</h4><div className="ghostIdentity">{result.players.map(p=><button key={p.name} onClick={()=>{setStage('done');onPlayer(p);}}><PlayerAvatar player={p}/><span>{p.proName}</span></button>)}</div><div className="weeklyValue"><strong>{result.games}</strong><span>kayıtlı maç{result.players.length>1?' / oyuncu':''}</span></div><p className="awardPeriod">Son 7 gün · kadroda en az kayıtlı maç · eşitlikte unvan paylaşılır.</p></>;
+ return <><div className="awardGroup ghostSlot"><article ref={card} className={'weeklyCard ghostCard '+(stage==='done'?'':'ghostWaiting')}>{content}</article></div>{stage!=='done'&&<div className={'ghostBackdrop ghost-'+stage}><article ref={overlay} className="weeklyCard ghostReveal" role="dialog" aria-label="Haftanın Hayaleti"><button ref={close} className="ghostClose" aria-label="Animasyonu kapat" onClick={()=>setStage('done')}>×</button>{content}</article></div>}</>;
+}

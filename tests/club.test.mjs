@@ -761,3 +761,12 @@ test('historical provisional IDs reconcile with real EA identities without chang
  const fresh={...snapshot.matches[0],matchId:'987000123',players:{'79638':{'real-EA-id':{...row}}}};delete fresh.importSource;
  const result=reconcileHistoryIdentities([historical,fresh]);assert.deepEqual(result[0].players['79638']['real-EA-id'],row);assert.equal(result[1],fresh);assert.equal(reconcileHistoryIdentities(result)[0],result[0]);
 });
+
+import {weeklyGhost} from '../lib/weekly-ghost.ts';
+test('weekly ghost counts unique weekly appearances, includes absent roster members and shares ties',()=>{
+ const now=snapshot.matches[0].timestamp*1000+1000,members=[{name:'a',proName:'A'},{name:'b',proName:'B'},{name:'c',proName:'C'}];
+ const m={...snapshot.matches[0],players:{'79638':{a:{playername:'a'},duplicate:{playername:'a'}}}};
+ assert.deepEqual(weeklyGhost([m,m],members,now),{games:0,players:members.slice(1)});
+ assert.deepEqual(weeklyGhost([m],members.slice(0,1),now),{games:1,players:members.slice(0,1)});
+ assert.equal(weeklyGhost([m],members,now+8*86400000),null);assert.equal(weeklyGhost([{...m,players:{}}],members,now),null);
+});
