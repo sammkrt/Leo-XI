@@ -33,6 +33,25 @@ pnpm start
 
 Durable Object deposu yerel Wrangler/Miniflare ortamında çalışır. `.wrangler/` içeriği Git'e gönderilmez.
 
+## Docker ile çalıştırma
+
+Docker Engine ve Compose çalışır durumda olmalıdır:
+
+```bash
+docker compose up --build -d
+docker compose logs -f app
+```
+
+Uygulama http://localhost:8787 adresinde açılır. Farklı bir port için `PORT=3000 docker compose up --build -d` kullanın. Port varsayılan olarak yalnız yerel makineye açılır.
+
+İmaj uygulamayı derler ve root olmayan kullanıcıyla Wrangler/Miniflare üzerinde çalıştırır. Kalıcı Durable Object verileri `club-data` Docker volume'unda tutulur; container yeniden oluşturulduğunda korunur. Bu depo Cloudflare'daki canlı depodan bağımsızdır. Ortam dosyaları, anahtarlar ve makinedeki mevcut veriler imaja kopyalanmaz.
+
+```bash
+docker compose down
+```
+
+`docker compose down -v` kalıcı yerel verileri de siler. Cloudflare Cron Trigger'ları yerel Wrangler ortamında otomatik çalışmaz; Docker çalıştırması zamanlanmış veri toplama sağlamaz. Bu kurulum yerel kullanım içindir; Cloudflare üretim yayını yukarıdaki mevcut akışla devam eder.
+
 ## Sayfa adresleri
 
 Bölümler `/maclar`, `/kadro`, `/karsilastir`, `/mac-gecesi` ve `/analiz` adreslerinden doğrudan açılır. Tek maç analizi `/analiz/mac/{matchId}`, seans analizi `/analiz/seans/{seansId}` biçimindedir. Diğer analiz görünümleri `/analiz/oyuncular`, `/analiz/karsilastir`, `/analiz/matris`, `/analiz/ikili` ve `/analiz/gelisim` adreslerini kullanır.

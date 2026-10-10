@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:${PORT:-8787}:8787"
+    volumes:
+      - club-data:/app/.wrangler/state
+    init: true
+    restart: unless-stopped
+
+volumes:
+  club-data:

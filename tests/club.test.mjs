@@ -632,7 +632,7 @@ test('unavailable award migration cannot block existing match and attendance API
  const storage=new FailingAwardStorage();await storage.put('historyImportVersion',HISTORY_IMPORT_VERSION);await storage.put({seeded:true,latest:{...snapshot,matches:[]},recentMatchIds:snapshot.matches.map(m=>m.matchId)});for(const match of snapshot.matches)await storage.put('match:'+match.matchId,match);
  const store=new ClubStore({storage,blockConcurrencyWhile:fn=>fn()});await store.ready;
  const archive=await json(store,'/api/archive');assert.equal(archive.status,200);assert.equal(archive.data.matches.length,10);assert.ok(archive.data.awardNotice);
- assert.equal((await json(store,'/api/club')).status,200);assert.equal((await json(store,'/api/attendance?date=2026-10-08')).status,200);
+ assert.equal((await json(store,'/api/club')).status,200);assert.equal((await json(store,'/api/attendance?date='+amsterdamDay())).status,200);
 });
 test('rolling previous seven days use the preceding time window rather than the last N matches',()=>{
  const now=Date.now(),matches=awardMatches({},5).map((m,i)=>({...m,timestamp:now/1000-[1,2,8,12,15][i]*86400}));
